@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voice Distorcer</string>
+    <string name="intro">Record a message. Your voice is pitch- and formant-shifted on this device before you share it.</string>
+    <string name="record">Start recording</string>
+    <string name="stop">Stop recording</string>
+    <string name="share">Share anonymized audio</string>
+    <string name="status_idle">Ready when you are.</string>
+    <string name="status_recording">Recording…</string>
+    <string name="status_processing">Anonymizing your voice…</string>
+    <string name="status_ready">Anonymized clip ready</string>
+    <string name="permission_title">Microphone permission required</string>
+    <string name="permission_body">Voice Distorcer needs microphone access to record your message. Audio is processed on your device and is never uploaded.</string>
+    <string name="grant_permission">Grant microphone access</string>
+    <string name="share_chooser_title">Share anonymized audio</string>
+    <string name="error_recording_failed">Recording failed. Please try again.</string>
+    <string name="error_empty_recording">No audio was captured. Please record again.</string>
+    <string name="error_processing_failed">Could not anonymize the recording. Please try again.</string>
+    <string name="error_share_failed">No app is available to share audio.</string>
+</resources>
