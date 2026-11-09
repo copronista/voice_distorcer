@@ -6,17 +6,24 @@ import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.voicedistorcer.R
+import com.voicedistorcer.playback.AudioPreviewPlayer
 import com.voicedistorcer.processing.AudioEncoder
 import com.voicedistorcer.processing.PcmFile
 import com.voicedistorcer.processing.VoiceDistortionProcessor
 import com.voicedistorcer.recording.RecordingEngine
+import com.voicedistorcer.settings.VoicePreset
+import com.voicedistorcer.settings.VoiceSettings
+import com.voicedistorcer.settings.VoiceSettingsStore
 import com.voicedistorcer.sharing.ShareGateway
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -29,10 +36,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val exportsDirectory = File(appContext.cacheDir, "exports")
 
     private val recorder = RecordingEngine()
-    private val processor = VoiceDistortionProcessor()
+    private val settingsStore = VoiceSettingsStore(appContext)
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Idle)
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
+    private val _settings = MutableStateFlow(settingsStore.load())
+    val settings: StateFlow<VoiceSettings> = _settings.asStateFlow()
+
+    private val _isPreviewPlaying = MutableStateFlow(false)
+    val isPreviewPlaying: StateFlow<Boolean> = _isPreviewPlaying.asStateFlow()
+
+    private val _previewErrors = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val previewErrors: SharedFlow<Unit> = _previewErrors.asSharedFlow()
+
+    private val previewPlayer = AudioPreviewPlayer(
+        onPlayingChanged = { playing -> _isPreviewPlaying.value = playing },
+        onError = { _previewErrors.tryEmit(Unit) },
+    )
 
     private var workJob: Job? = null
     private var outputFile: File? = null
@@ -46,6 +67,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun startRecording() {
         if (workJob?.isActive == true) return
 
+        stopPreview()
         recordingsDirectory.mkdirs()
         exportsDirectory.mkdirs()
 
@@ -95,7 +117,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val pcm = withContext(Dispatchers.IO) { PcmFile.read(rawFile) }
                 rawFile.delete()
 
-                val processed = withContext(Dispatchers.Default) { processor.process(pcm) }
+                val currentSettings = _settings.value
+                val processed = withContext(Dispatchers.Default) {
+                    VoiceDistortionProcessor(currentSettings.toDistortionConfig()).process(pcm)
+                }
                 if (processed.isEmpty()) {
                     throw IllegalStateException("Processed clip is empty")
                 }
@@ -125,10 +150,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun share(context: Context): Boolean {
         val file = outputFile ?: return false
+        stopPreview()
         return ShareGateway.share(context, file)
     }
 
+    fun togglePreview() {
+        val file = outputFile ?: return
+        previewPlayer.toggle(file)
+    }
+
+    fun stopPreview() {
+        previewPlayer.stop()
+    }
+
+    fun applyPreset(preset: VoicePreset) {
+        updateSettings(VoiceSettings.forPreset(preset))
+    }
+
+    fun updateTone(semitones: Double) {
+        updateSettings(_settings.value.withTone(semitones))
+    }
+
+    fun updateSpeed(speed: Double) {
+        updateSettings(_settings.value.withSpeed(speed))
+    }
+
+    private fun updateSettings(settings: VoiceSettings) {
+        _settings.value = settings
+        settingsStore.save(settings)
+    }
+
     override fun onCleared() {
+        previewPlayer.release()
         recorder.stop()
         workJob?.cancel()
         super.onCleared()

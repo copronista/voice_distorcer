@@ -4,6 +4,8 @@
     <string name="intro">Record a message. Your voice is pitch- and formant-shifted on this device before you share it.</string>
     <string name="record">Start recording</string>
     <string name="stop">Stop recording</string>
+    <string name="preview">Listen to anonymized clip</string>
+    <string name="stop_preview">Stop playback</string>
     <string name="share">Share anonymized audio</string>
     <string name="status_idle">Ready when you are.</string>
     <string name="status_recording">Recording…</string>
@@ -17,4 +19,15 @@
     <string name="error_empty_recording">No audio was captured. Please record again.</string>
     <string name="error_processing_failed">Could not anonymize the recording. Please try again.</string>
     <string name="error_share_failed">No app is available to share audio.</string>
+    <string name="error_preview_failed">Could not play the audio. Please try again.</string>
+    <string name="settings">Settings</string>
+    <string name="settings_title">Voice settings</string>
+    <string name="settings_preset_label">Preset</string>
+    <string name="preset_default">Default</string>
+    <string name="preset_male">Male</string>
+    <string name="preset_female">Female</string>
+    <string name="settings_tone_value">Tone: %1$s semitones</string>
+    <string name="settings_speed_value">Speed: %1$sx</string>
+    <string name="settings_anonymization_note">Voice anonymization is always applied. Changing these settings only adjusts the resulting character of the voice.</string>
+    <string name="settings_done">Done</string>
 </resources>

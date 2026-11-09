@@ -40,6 +40,43 @@ class VoiceDistortionProcessorTest {
     }
 
     @Test
+    fun speedAboveOneShortensTheClip() {
+        val input = sineWave(sampleCount = 44_100, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(speed = 1.5),
+        ).process(input)
+
+        val expectedLength = input.size / 1.5
+        assertEquals(expectedLength.toDouble(), output.size.toDouble(), 2.0)
+    }
+
+    @Test
+    fun speedBelowOneLengthensTheClip() {
+        val input = sineWave(sampleCount = 44_100, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(speed = 0.5),
+        ).process(input)
+
+        val expectedLength = input.size / 0.5
+        assertEquals(expectedLength.toDouble(), output.size.toDouble(), 2.0)
+    }
+
+    @Test
+    fun speedIsClampedToSupportedRange() {
+        val input = sineWave(sampleCount = 44_100, frequency = 220.0)
+
+        val tooFast = VoiceDistortionProcessor(DistortionConfig(speed = 10.0)).process(input)
+        val clampedFast = VoiceDistortionProcessor(DistortionConfig(speed = 1.5)).process(input)
+        val tooSlow = VoiceDistortionProcessor(DistortionConfig(speed = 0.01)).process(input)
+        val clampedSlow = VoiceDistortionProcessor(DistortionConfig(speed = 0.5)).process(input)
+
+        assertEquals(clampedFast.size, tooFast.size)
+        assertEquals(clampedSlow.size, tooSlow.size)
+    }
+
+    @Test
     fun emptyInputProducesEmptyOutput() {
         val output = VoiceDistortionProcessor().process(ShortArray(0))
 

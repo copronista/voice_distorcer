@@ -24,11 +24,14 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,16 +62,24 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onStop() {
+        viewModel.stopPreview()
+        super.onStop()
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val isPreviewPlaying by viewModel.isPreviewPlaying.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var hasPermission by remember { mutableStateOf(context.hasRecordAudioPermission()) }
     var startAfterGrant by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -90,8 +101,23 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    LaunchedEffect(viewModel) {
+        viewModel.previewErrors.collect {
+            Toast.makeText(context, R.string.error_preview_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.app_name)) },
+                actions = {
+                    TextButton(onClick = { showSettings = true }) {
+                        Text(stringResource(R.string.settings))
+                    }
+                },
+            )
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -121,6 +147,17 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
             Spacer(modifier = Modifier.weight(1f))
 
             if (state is UiState.Ready) {
+                OutlinedButton(
+                    onClick = viewModel::togglePreview,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        stringResource(
+                            if (isPreviewPlaying) R.string.stop_preview else R.string.preview,
+                        ),
+                    )
+                }
+
                 Button(
                     onClick = {
                         if (!viewModel.share(context)) {
@@ -162,6 +199,16 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
                 )
             }
         }
+    }
+
+    if (showSettings) {
+        VoiceSettingsDialog(
+            settings = settings,
+            onPresetSelected = viewModel::applyPreset,
+            onToneChanged = viewModel::updateTone,
+            onSpeedChanged = viewModel::updateSpeed,
+            onDismiss = { showSettings = false },
+        )
     }
 }
 
