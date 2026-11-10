@@ -2,6 +2,7 @@ package com.voicedistorcer.ui
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
@@ -89,6 +90,20 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
             viewModel.startRecording()
         }
         startAfterGrant = false
+    }
+
+    val mediaPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            context.startActivity(
+                Intent(context, ImportActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                    data = uri
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                },
+            )
+        }
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -197,6 +212,26 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
                         if (state is UiState.Recording) R.string.stop else R.string.record,
                     ),
                 )
+            }
+
+            OutlinedButton(
+                onClick = {
+                    context.startActivity(Intent(context, VideoActivity::class.java))
+                },
+                enabled = state !is UiState.Recording && state !is UiState.Processing,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.record_video))
+            }
+
+            OutlinedButton(
+                onClick = {
+                    mediaPicker.launch(arrayOf("audio/*", "video/*"))
+                },
+                enabled = state !is UiState.Recording && state !is UiState.Processing,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.open_media))
             }
         }
     }

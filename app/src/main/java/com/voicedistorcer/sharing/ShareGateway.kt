@@ -4,12 +4,18 @@ import android.app.Activity
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.core.content.FileProvider
 import com.voicedistorcer.R
 import java.io.File
 
 object ShareGateway {
-    fun share(context: Context, file: File): Boolean {
+    fun share(
+        context: Context,
+        file: File,
+        mimeType: String = "audio/*",
+        @StringRes chooserTitleRes: Int = R.string.share_chooser_title,
+    ): Boolean {
         if (!file.exists()) return false
 
         return try {
@@ -19,14 +25,14 @@ object ShareGateway {
                 file,
             )
             val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "audio/*"
+                type = mimeType
                 putExtra(Intent.EXTRA_STREAM, uri)
                 clipData = ClipData.newRawUri(file.name, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             val chooser = Intent.createChooser(
                 sendIntent,
-                context.getString(R.string.share_chooser_title),
+                context.getString(chooserTitleRes),
             ).apply {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 if (context !is Activity) {
