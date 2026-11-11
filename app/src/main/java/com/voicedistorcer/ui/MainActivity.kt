@@ -49,6 +49,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.voicedistorcer.R
+import com.voicedistorcer.ui.theme.VoiceDistorcerTheme
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -58,7 +59,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme {
+            VoiceDistorcerTheme {
                 VoiceDistorcerScreen(viewModel)
             }
         }

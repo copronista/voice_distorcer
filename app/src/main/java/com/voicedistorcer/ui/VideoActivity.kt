@@ -53,6 +53,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.voicedistorcer.R
 import com.voicedistorcer.recording.VideoRecordingController
+import com.voicedistorcer.ui.theme.VoiceDistorcerTheme
 import java.util.Locale
 
 class VideoActivity : ComponentActivity() {
@@ -70,7 +71,7 @@ class VideoActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme {
+            VoiceDistorcerTheme {
                 VideoMessageScreen(
                     viewModel = viewModel,
                     controller = controller,

@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.voicedistorcer.R
+import com.voicedistorcer.ui.theme.VoiceDistorcerTheme
 import java.util.Locale
 
 class ImportActivity : ComponentActivity() {
@@ -51,7 +52,7 @@ class ImportActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme {
+            VoiceDistorcerTheme {
                 ImportScreen(
                     viewModel = viewModel,
                     onClose = { finish() },
