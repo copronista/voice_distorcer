@@ -12,9 +12,15 @@ import kotlin.math.pow
 import kotlin.math.sin
 
 internal class FormantShifter(
-    private val fftSize: Int = 1024,
-    private val hopSize: Int = 256,
+    private val fftSize: Int = 2048,
+    private val hopSize: Int = 512,
+    private val gainLimit: Double = 4.0,
+    smoothing: Double = 0.5,
 ) {
+    private val safeGainLimit = gainLimit.coerceIn(1.0, 8.0)
+    private val envelopeCutoff = (
+        fftSize / 32.0 * 2.0.pow((0.5 - smoothing.coerceIn(0.0, 1.0)) * 2.0)
+    ).toInt().coerceIn(8, fftSize / 4)
     init {
         require(fftSize > 0 && (fftSize and (fftSize - 1)) == 0) {
             "FFT size must be a power of two"
@@ -56,7 +62,8 @@ internal class FormantShifter(
             val warpedEnvelope = warpEnvelope(envelope, ratio)
 
             for (bin in 0..fftSize / 2) {
-                val gain = (warpedEnvelope[bin] / max(envelope[bin], 1e-9)).coerceIn(0.25, 4.0)
+                val gain = (warpedEnvelope[bin] / max(envelope[bin], 1e-9))
+                    .coerceIn(1.0 / safeGainLimit, safeGainLimit)
                 val newMagnitude = magnitude[bin] * gain
                 val newReal = newMagnitude * cos(phase[bin])
                 val newImaginary = newMagnitude * sin(phase[bin])
@@ -101,8 +108,7 @@ internal class FormantShifter(
 
         Fft.transform(real, imaginary, inverse = true)
 
-        val cutoff = (fftSize / 32).coerceIn(8, fftSize / 4)
-        for (index in cutoff until fftSize - cutoff) {
+        for (index in envelopeCutoff until fftSize - envelopeCutoff) {
             real[index] = 0.0
             imaginary[index] = 0.0
         }

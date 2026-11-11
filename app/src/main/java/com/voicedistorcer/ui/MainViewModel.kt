@@ -188,6 +188,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         updateSettings(_settings.value.withRobot(value))
     }
 
+    fun updateEcho(value: Double) {
+        updateSettings(_settings.value.withEcho(value))
+    }
+
+    fun updateFan(value: Double) {
+        updateSettings(_settings.value.withFan(value))
+    }
+
+    fun updateAdvancedSettings(settings: VoiceSettings) {
+        updateSettings(settings)
+    }
+
     private fun updateSettings(settings: VoiceSettings) {
         _settings.value = settings
         settingsStore.save(settings)

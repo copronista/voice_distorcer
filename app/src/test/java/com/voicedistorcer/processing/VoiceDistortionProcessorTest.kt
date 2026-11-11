@@ -138,6 +138,212 @@ class VoiceDistortionProcessorTest {
     }
 
     @Test
+    fun echoAddsDelayedRepeats() {
+        val input = ShortArray(44_100)
+        input[0] = 10_000
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                echo = 1.0,
+            ),
+        ).process(input)
+
+        val delayedPeak = output.drop(1000).maxOfOrNull { abs(it.toInt()) } ?: 0
+        assertTrue("Delayed peak was $delayedPeak", delayedPeak > 1000)
+    }
+
+    @Test
+    fun fanAddsNoiseToSilence() {
+        val input = ShortArray(4410)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                fan = 1.0,
+            ),
+        ).process(input)
+
+        val peak = output.maxOfOrNull { abs(it.toInt()) } ?: 0
+        assertTrue("Peak was $peak", peak > 100)
+    }
+
+    @Test
+    fun echoAndFanAreClampedToSupportedRange() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0)
+
+        val tooMuch = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                echo = 10.0,
+                fan = 10.0,
+            ),
+        ).process(input)
+        val clamped = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                echo = 1.0,
+                fan = 1.0,
+            ),
+        ).process(input)
+
+        assertTrue(tooMuch.contentEquals(clamped))
+    }
+
+    @Test
+    fun reverseReversesTheClip() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                reverse = true,
+            ),
+        ).process(input)
+
+        val expected = input.reversedArray()
+        assertEquals(input.size, output.size)
+        for (index in expected.indices) {
+            val difference = abs(expected[index].toInt() - output[index].toInt())
+            assertTrue("Sample $index differed by $difference", difference <= 1)
+        }
+    }
+
+    @Test
+    fun stutterChangesTheSignalAndPreservesDuration() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                stutter = 1.0,
+            ),
+        ).process(input)
+
+        assertEquals(input.size, output.size)
+        assertFalse(input.contentEquals(output))
+    }
+
+    @Test
+    fun alienChangesTheSignalAndPreservesDuration() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                alien = 0.8,
+            ),
+        ).process(input)
+
+        assertEquals(input.size, output.size)
+        assertFalse(input.contentEquals(output))
+    }
+
+    @Test
+    fun drunkChangesTheSignalAndPreservesDuration() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                drunk = 0.8,
+            ),
+        ).process(input)
+
+        assertEquals(input.size, output.size)
+        assertFalse(input.contentEquals(output))
+    }
+
+    @Test
+    fun telephoneAttenuatesLowFrequencies() {
+        val input = sineWave(sampleCount = 4410, frequency = 100.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                telephone = 1.0,
+            ),
+        ).process(input)
+
+        val inputPeak = input.maxOf { abs(it.toInt()) }
+        val outputPeak = output.drop(1000).maxOf { abs(it.toInt()) }
+        assertTrue("Input peak $inputPeak, output peak $outputPeak", outputPeak < inputPeak * 0.8)
+    }
+
+    @Test
+    fun megaphoneChangesTheSignalAndPreservesDuration() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                megaphone = 1.0,
+            ),
+        ).process(input)
+
+        assertEquals(input.size, output.size)
+        assertFalse(input.contentEquals(output))
+    }
+
+    @Test
+    fun beeChangesTheSignalAndPreservesDuration() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                bee = 0.8,
+            ),
+        ).process(input)
+
+        assertEquals(input.size, output.size)
+        assertFalse(input.contentEquals(output))
+    }
+
+    @Test
+    fun funEffectsAreClampedToSupportedRange() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0)
+
+        val tooMuch = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                stutter = 10.0,
+                alien = 10.0,
+                drunk = 10.0,
+                telephone = 10.0,
+                megaphone = 10.0,
+                bee = 10.0,
+            ),
+        ).process(input)
+        val clamped = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                stutter = 1.0,
+                alien = 1.0,
+                drunk = 1.0,
+                telephone = 1.0,
+                megaphone = 1.0,
+                bee = 1.0,
+            ),
+        ).process(input)
+
+        assertTrue(tooMuch.contentEquals(clamped))
+    }
+
+    @Test
     fun characterEffectsAreClampedToSupportedRange() {
         val input = sineWave(sampleCount = 4410, frequency = 220.0)
 
@@ -159,6 +365,109 @@ class VoiceDistortionProcessorTest {
         ).process(input)
 
         assertTrue(tooMuch.contentEquals(clamped))
+    }
+
+    @Test
+    fun highPassFilterRemovesDcOffset() {
+        val input = ShortArray(4410) { 10_000 }
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                highPassHz = 100.0,
+            ),
+        ).process(input)
+
+        val peak = output.drop(1000).maxOfOrNull { abs(it.toInt()) } ?: 0
+        assertTrue("Peak was $peak", peak < 100)
+    }
+
+    @Test
+    fun noiseGateAttenuatesQuietSignals() {
+        val input = sineWave(sampleCount = 22_050, frequency = 220.0, amplitude = 200.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                noiseGateDb = -30.0,
+            ),
+        ).process(input)
+
+        val peak = output.drop(15_000).maxOfOrNull { abs(it.toInt()) } ?: 0
+        assertTrue("Peak was $peak", peak < 20)
+    }
+
+    @Test
+    fun compressorReducesLoudPeaks() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                compressor = 1.0,
+            ),
+        ).process(input)
+
+        val inputPeak = input.drop(2000).maxOf { abs(it.toInt()) }
+        val outputPeak = output.drop(2000).maxOf { abs(it.toInt()) }
+        assertTrue("Input peak $inputPeak, output peak $outputPeak", outputPeak < inputPeak)
+    }
+
+    @Test
+    fun outputGainScalesTheSignal() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0, amplitude = 5_000.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                outputGainDb = 6.0,
+            ),
+        ).process(input)
+
+        val inputPeak = input.maxOf { abs(it.toInt()) }
+        val outputPeak = output.maxOf { abs(it.toInt()) }
+        val expectedPeak = inputPeak * Math.pow(10.0, 6.0 / 20.0)
+        assertEquals(expectedPeak, outputPeak.toDouble(), 1.0)
+    }
+
+    @Test
+    fun zeroFormantMixPreservesTheSignal() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 4.0,
+                formantMix = 0.0,
+            ),
+        ).process(input)
+
+        for (index in input.indices) {
+            val difference = abs(input[index].toInt() - output[index].toInt())
+            assertTrue("Sample $index differed by $difference", difference <= 1)
+        }
+    }
+
+    @Test
+    fun customFftSizesPreserveDuration() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 2.0,
+                formantSemitones = 2.0,
+                formantFftSize = 4096,
+                formantHopSize = 1024,
+                pitchFftSize = 1024,
+                pitchHopSize = 256,
+            ),
+        ).process(input)
+
+        assertEquals(input.size, output.size)
     }
 
     @Test
