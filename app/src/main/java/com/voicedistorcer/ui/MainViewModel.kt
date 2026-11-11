@@ -2,6 +2,7 @@ package com.voicedistorcer.ui
 
 import android.app.Application
 import android.content.Context
+import android.net.Uri
 import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +14,7 @@ import com.voicedistorcer.processing.VoiceDistortionProcessor
 import com.voicedistorcer.recording.RecordingEngine
 import com.voicedistorcer.settings.VoicePreset
 import com.voicedistorcer.settings.VoiceSettings
+import com.voicedistorcer.settings.VoiceSettingsCodec
 import com.voicedistorcer.settings.VoiceSettingsStore
 import com.voicedistorcer.sharing.ShareGateway
 import kotlinx.coroutines.CancellationException
@@ -49,6 +51,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _previewErrors = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val previewErrors: SharedFlow<Unit> = _previewErrors.asSharedFlow()
+
+    private val _settingsTransferMessages = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val settingsTransferMessages: SharedFlow<Int> = _settingsTransferMessages.asSharedFlow()
 
     private val previewPlayer = AudioPreviewPlayer(
         onPlayingChanged = { playing -> _isPreviewPlaying.value = playing },
@@ -198,6 +203,47 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateAdvancedSettings(settings: VoiceSettings) {
         updateSettings(settings)
+    }
+
+    fun exportSettings(uri: Uri) {
+        viewModelScope.launch {
+            val success = withContext(Dispatchers.IO) {
+                runCatching {
+                    val contents = VoiceSettingsCodec.encode(_settings.value)
+                    val stream = appContext.contentResolver.openOutputStream(uri)
+                        ?: error("Unable to open export destination")
+                    stream.use { it.write(contents.toByteArray(Charsets.UTF_8)) }
+                }.isSuccess
+            }
+            _settingsTransferMessages.tryEmit(
+                if (success) {
+                    R.string.settings_export_success
+                } else {
+                    R.string.settings_export_failed
+                },
+            )
+        }
+    }
+
+    fun importSettings(uri: Uri) {
+        viewModelScope.launch {
+            val imported = withContext(Dispatchers.IO) {
+                runCatching {
+                    val stream = appContext.contentResolver.openInputStream(uri)
+                        ?: error("Unable to open settings file")
+                    val contents = stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                    VoiceSettingsCodec.decode(contents)
+                }
+            }
+            imported.onSuccess { updateSettings(it) }
+            _settingsTransferMessages.tryEmit(
+                if (imported.isSuccess) {
+                    R.string.settings_import_success
+                } else {
+                    R.string.settings_import_failed
+                },
+            )
+        }
     }
 
     private fun updateSettings(settings: VoiceSettings) {

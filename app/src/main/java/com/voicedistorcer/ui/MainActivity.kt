@@ -107,6 +107,24 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
         }
     }
 
+    val exportSettingsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/plain"),
+    ) { uri ->
+        if (uri != null) {
+            viewModel.exportSettings(uri)
+        }
+    }
+
+    val importSettingsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            viewModel.importSettings(uri)
+        }
+    }
+
+    val exportSettingsFileName = stringResource(R.string.settings_export_file_name)
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -120,6 +138,12 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
     LaunchedEffect(viewModel) {
         viewModel.previewErrors.collect {
             Toast.makeText(context, R.string.error_preview_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    LaunchedEffect(viewModel) {
+        viewModel.settingsTransferMessages.collect { messageRes ->
+            Toast.makeText(context, messageRes, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -249,6 +273,12 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
             onEchoChanged = viewModel::updateEcho,
             onFanChanged = viewModel::updateFan,
             onAdvancedSettingsChanged = viewModel::updateAdvancedSettings,
+            onExportSettings = {
+                exportSettingsLauncher.launch(exportSettingsFileName)
+            },
+            onImportSettings = {
+                importSettingsLauncher.launch(arrayOf("*/*"))
+            },
             onDismiss = { showSettings = false },
         )
     }

@@ -24,6 +24,38 @@ data class DistortionConfig(
     val telephone: Double = 0.0,
     val megaphone: Double = 0.0,
     val bee: Double = 0.0,
+    val gritDrive: Double = 4.0,
+    val echoDelayMs: Double = 180.0,
+    val echoWet: Double = 0.7,
+    val echoFeedback: Double = 0.45,
+    val fanCutoffHz: Double = 1200.0,
+    val fanModulationHz: Double = 0.3,
+    val fanNoiseLevel: Double = 0.18,
+    val fanNoiseSeed: Int = 0x12345678,
+    val stutterSliceMs: Double = 120.0,
+    val stutterSeed: Int = 0x6D2B79F5,
+    val alienCarrierHz: Double = 220.0,
+    val alienWobbleHz: Double = 0.6,
+    val alienTremoloHz: Double = 5.0,
+    val drunkMaxDelayMs: Double = 15.0,
+    val drunkWobbleHz: Double = 0.8,
+    val drunkTremoloHz: Double = 4.5,
+    val telephoneLowHz: Double = 300.0,
+    val telephoneHighHz: Double = 3400.0,
+    val telephoneDrive: Double = 2.0,
+    val megaphoneLowHz: Double = 500.0,
+    val megaphoneHighHz: Double = 3000.0,
+    val megaphoneDrive: Double = 4.0,
+    val beeBuzzHz: Double = 35.0,
+    val beeBuzzRatio: Double = 1.17,
+    val beeFlutterHz: Double = 0.7,
+    val compressorMaxRatio: Double = 7.0,
+    val compressorThreshold: Double = 0.25,
+    val compressorAttackMs: Double = 5.0,
+    val compressorReleaseMs: Double = 100.0,
+    val gateAttackMs: Double = 5.0,
+    val gateReleaseMs: Double = 100.0,
+    val robotCarrierHz: Double = 80.0,
     val highPassHz: Double = 0.0,
     val noiseGateDb: Double = -80.0,
     val compressor: Double = 0.0,
@@ -63,7 +95,11 @@ class VoiceDistortionProcessor(
 
         val gateDb = config.noiseGateDb.coerceIn(MIN_NOISE_GATE_DB, MAX_NOISE_GATE_DB)
         if (gateDb > MIN_NOISE_GATE_DB) {
-            processed = applyNoiseGate(processed, sampleRate, gateDb)
+            val gateAttack = config.gateAttackMs
+                .coerceIn(MIN_GATE_ATTACK_MS, MAX_GATE_ATTACK_MS) / 1000.0
+            val gateRelease = config.gateReleaseMs
+                .coerceIn(MIN_GATE_RELEASE_MS, MAX_GATE_RELEASE_MS) / 1000.0
+            processed = applyNoiseGate(processed, sampleRate, gateDb, gateAttack, gateRelease)
         }
 
         val formantMix = config.formantMix.coerceIn(MIN_EFFECT, MAX_EFFECT)
@@ -82,27 +118,72 @@ class VoiceDistortionProcessor(
 
         val robot = config.robot.coerceIn(MIN_EFFECT, MAX_EFFECT)
         if (robot > 0.0 && processed.isNotEmpty()) {
-            processed = applyRobot(processed, robot, sampleRate)
+            val robotCarrier = config.robotCarrierHz
+                .coerceIn(MIN_ROBOT_CARRIER_HZ, MAX_ROBOT_CARRIER_HZ)
+            processed = applyRobot(processed, robot, sampleRate, robotCarrier)
         }
 
         val alien = config.alien.coerceIn(MIN_EFFECT, MAX_EFFECT)
         if (alien > 0.0 && processed.isNotEmpty()) {
-            processed = applyAlien(processed, sampleRate, alien)
+            val alienCarrier = config.alienCarrierHz
+                .coerceIn(MIN_ALIEN_CARRIER_HZ, MAX_ALIEN_CARRIER_HZ)
+            val alienWobble = config.alienWobbleHz
+                .coerceIn(MIN_ALIEN_WOBBLE_HZ, MAX_ALIEN_WOBBLE_HZ)
+            val alienTremolo = config.alienTremoloHz
+                .coerceIn(MIN_ALIEN_TREMOLO_HZ, MAX_ALIEN_TREMOLO_HZ)
+            processed = applyAlien(
+                processed,
+                sampleRate,
+                alien,
+                alienCarrier,
+                alienWobble,
+                alienTremolo,
+            )
         }
 
         val drunk = config.drunk.coerceIn(MIN_EFFECT, MAX_EFFECT)
         if (drunk > 0.0 && processed.isNotEmpty()) {
-            processed = applyDrunk(processed, sampleRate, drunk)
+            val drunkMaxDelay = config.drunkMaxDelayMs
+                .coerceIn(MIN_DRUNK_MAX_DELAY_MS, MAX_DRUNK_MAX_DELAY_MS)
+            val drunkWobble = config.drunkWobbleHz
+                .coerceIn(MIN_DRUNK_WOBBLE_HZ, MAX_DRUNK_WOBBLE_HZ)
+            val drunkTremolo = config.drunkTremoloHz
+                .coerceIn(MIN_DRUNK_TREMOLO_HZ, MAX_DRUNK_TREMOLO_HZ)
+            processed = applyDrunk(
+                processed,
+                sampleRate,
+                drunk,
+                drunkMaxDelay,
+                drunkWobble,
+                drunkTremolo,
+            )
         }
 
         val grit = config.grit.coerceIn(MIN_EFFECT, MAX_EFFECT)
         if (grit > 0.0 && processed.isNotEmpty()) {
-            processed = applyGrit(processed, grit)
+            val gritDrive = config.gritDrive.coerceIn(MIN_GRIT_DRIVE, MAX_GRIT_DRIVE)
+            processed = applyGrit(processed, grit, gritDrive)
         }
 
         val compressor = config.compressor.coerceIn(MIN_EFFECT, MAX_EFFECT)
         if (compressor > 0.0 && processed.isNotEmpty()) {
-            processed = applyCompressor(processed, sampleRate, compressor)
+            val compressorMaxRatio = config.compressorMaxRatio
+                .coerceIn(MIN_COMPRESSOR_MAX_RATIO, MAX_COMPRESSOR_MAX_RATIO)
+            val compressorThreshold = config.compressorThreshold
+                .coerceIn(MIN_COMPRESSOR_THRESHOLD, MAX_COMPRESSOR_THRESHOLD)
+            val compressorAttack = config.compressorAttackMs
+                .coerceIn(MIN_COMPRESSOR_ATTACK_MS, MAX_COMPRESSOR_ATTACK_MS) / 1000.0
+            val compressorRelease = config.compressorReleaseMs
+                .coerceIn(MIN_COMPRESSOR_RELEASE_MS, MAX_COMPRESSOR_RELEASE_MS) / 1000.0
+            processed = applyCompressor(
+                processed,
+                sampleRate,
+                compressor,
+                compressorMaxRatio,
+                compressorThreshold,
+                compressorAttack,
+                compressorRelease,
+            )
         }
 
         if (config.reverse && processed.isNotEmpty()) {
@@ -111,32 +192,105 @@ class VoiceDistortionProcessor(
 
         val stutter = config.stutter.coerceIn(MIN_EFFECT, MAX_EFFECT)
         if (stutter > 0.0 && processed.isNotEmpty()) {
-            processed = applyStutter(processed, sampleRate, stutter)
+            val stutterSlice = config.stutterSliceMs
+                .coerceIn(MIN_STUTTER_SLICE_MS, MAX_STUTTER_SLICE_MS)
+            processed = applyStutter(
+                processed,
+                sampleRate,
+                stutter,
+                stutterSlice,
+                config.stutterSeed,
+            )
         }
 
         val telephone = config.telephone.coerceIn(MIN_EFFECT, MAX_EFFECT)
         if (telephone > 0.0 && processed.isNotEmpty()) {
-            processed = applyTelephone(processed, sampleRate, telephone)
+            val telephoneLow = config.telephoneLowHz
+                .coerceIn(MIN_TELEPHONE_LOW_HZ, MAX_TELEPHONE_LOW_HZ)
+            val telephoneHigh = config.telephoneHighHz
+                .coerceIn(MIN_TELEPHONE_HIGH_HZ, MAX_TELEPHONE_HIGH_HZ)
+                .coerceAtLeast(telephoneLow + 1.0)
+            val telephoneDrive = config.telephoneDrive
+                .coerceIn(MIN_TELEPHONE_DRIVE, MAX_TELEPHONE_DRIVE)
+            processed = applyTelephone(
+                processed,
+                sampleRate,
+                telephone,
+                telephoneLow,
+                telephoneHigh,
+                telephoneDrive,
+            )
         }
 
         val megaphone = config.megaphone.coerceIn(MIN_EFFECT, MAX_EFFECT)
         if (megaphone > 0.0 && processed.isNotEmpty()) {
-            processed = applyMegaphone(processed, sampleRate, megaphone)
+            val megaphoneLow = config.megaphoneLowHz
+                .coerceIn(MIN_MEGAPHONE_LOW_HZ, MAX_MEGAPHONE_LOW_HZ)
+            val megaphoneHigh = config.megaphoneHighHz
+                .coerceIn(MIN_MEGAPHONE_HIGH_HZ, MAX_MEGAPHONE_HIGH_HZ)
+                .coerceAtLeast(megaphoneLow + 1.0)
+            val megaphoneDrive = config.megaphoneDrive
+                .coerceIn(MIN_MEGAPHONE_DRIVE, MAX_MEGAPHONE_DRIVE)
+            processed = applyMegaphone(
+                processed,
+                sampleRate,
+                megaphone,
+                megaphoneLow,
+                megaphoneHigh,
+                megaphoneDrive,
+            )
         }
 
         val bee = config.bee.coerceIn(MIN_EFFECT, MAX_EFFECT)
         if (bee > 0.0 && processed.isNotEmpty()) {
-            processed = applyBee(processed, sampleRate, bee)
+            val beeBuzz = config.beeBuzzHz.coerceIn(MIN_BEE_BUZZ_HZ, MAX_BEE_BUZZ_HZ)
+            val beeBuzzRatio = config.beeBuzzRatio
+                .coerceIn(MIN_BEE_BUZZ_RATIO, MAX_BEE_BUZZ_RATIO)
+            val beeFlutter = config.beeFlutterHz
+                .coerceIn(MIN_BEE_FLUTTER_HZ, MAX_BEE_FLUTTER_HZ)
+            processed = applyBee(
+                processed,
+                sampleRate,
+                bee,
+                beeBuzz,
+                beeBuzzRatio,
+                beeFlutter,
+            )
         }
 
         val echo = config.echo.coerceIn(MIN_EFFECT, MAX_EFFECT)
         if (echo > 0.0 && processed.isNotEmpty()) {
-            processed = applyEcho(processed, sampleRate, echo)
+            val echoDelay = config.echoDelayMs.coerceIn(MIN_ECHO_DELAY_MS, MAX_ECHO_DELAY_MS)
+            val echoWet = config.echoWet.coerceIn(MIN_ECHO_WET, MAX_ECHO_WET)
+            val echoFeedback = config.echoFeedback
+                .coerceIn(MIN_ECHO_FEEDBACK, MAX_ECHO_FEEDBACK)
+            processed = applyEcho(
+                processed,
+                sampleRate,
+                echo,
+                echoDelay,
+                echoWet,
+                echoFeedback,
+            )
         }
 
         val fan = config.fan.coerceIn(MIN_EFFECT, MAX_EFFECT)
         if (fan > 0.0 && processed.isNotEmpty()) {
-            processed = applyFan(processed, sampleRate, fan)
+            val fanCutoff = config.fanCutoffHz
+                .coerceIn(MIN_FAN_CUTOFF_HZ, MAX_FAN_CUTOFF_HZ)
+            val fanModulation = config.fanModulationHz
+                .coerceIn(MIN_FAN_MODULATION_HZ, MAX_FAN_MODULATION_HZ)
+            val fanNoiseLevel = config.fanNoiseLevel
+                .coerceIn(MIN_FAN_NOISE_LEVEL, MAX_FAN_NOISE_LEVEL)
+            processed = applyFan(
+                processed,
+                sampleRate,
+                fan,
+                fanCutoff,
+                fanModulation,
+                fanNoiseLevel,
+                config.fanNoiseSeed,
+            )
         }
 
         val outputGainDb = config.outputGainDb.coerceIn(
@@ -188,12 +342,14 @@ class VoiceDistortionProcessor(
         input: DoubleArray,
         sampleRate: Int,
         thresholdDb: Double,
+        attackSeconds: Double,
+        releaseSeconds: Double,
     ): DoubleArray {
         if (input.isEmpty() || sampleRate <= 0) return input
 
         val threshold = 10.0.pow(thresholdDb / 20.0)
-        val attack = exp(-1.0 / (GATE_ATTACK_SECONDS * sampleRate))
-        val release = exp(-1.0 / (GATE_RELEASE_SECONDS * sampleRate))
+        val attack = exp(-1.0 / (attackSeconds * sampleRate))
+        val release = exp(-1.0 / (releaseSeconds * sampleRate))
         val output = DoubleArray(input.size)
         var gain = 1.0
         for (index in input.indices) {
@@ -210,12 +366,16 @@ class VoiceDistortionProcessor(
         input: DoubleArray,
         sampleRate: Int,
         amount: Double,
+        maxRatio: Double,
+        threshold: Double,
+        attackSeconds: Double,
+        releaseSeconds: Double,
     ): DoubleArray {
         if (input.isEmpty() || sampleRate <= 0) return input
 
-        val ratio = 1.0 + amount * MAX_COMPRESSOR_RATIO
-        val attack = exp(-1.0 / (COMPRESSOR_ATTACK_SECONDS * sampleRate))
-        val release = exp(-1.0 / (COMPRESSOR_RELEASE_SECONDS * sampleRate))
+        val ratio = 1.0 + amount * maxRatio
+        val attack = exp(-1.0 / (attackSeconds * sampleRate))
+        val release = exp(-1.0 / (releaseSeconds * sampleRate))
         val output = DoubleArray(input.size)
         var envelope = 0.0
         for (index in input.indices) {
@@ -223,8 +383,8 @@ class VoiceDistortionProcessor(
             val level = abs(sample)
             val coefficient = if (level > envelope) attack else release
             envelope = coefficient * envelope + (1.0 - coefficient) * level
-            val gain = if (envelope > COMPRESSOR_THRESHOLD) {
-                (COMPRESSOR_THRESHOLD + (envelope - COMPRESSOR_THRESHOLD) / ratio) / envelope
+            val gain = if (envelope > threshold) {
+                (threshold + (envelope - threshold) / ratio) / envelope
             } else {
                 1.0
             }
@@ -237,13 +397,16 @@ class VoiceDistortionProcessor(
         input: DoubleArray,
         sampleRate: Int,
         amount: Double,
+        delayMs: Double,
+        maxWet: Double,
+        maxFeedback: Double,
     ): DoubleArray {
         if (input.isEmpty() || sampleRate <= 0) return input
 
-        val delaySamples = (ECHO_DELAY_SECONDS * sampleRate).roundToInt().coerceAtLeast(1)
+        val delaySamples = (delayMs / 1000.0 * sampleRate).roundToInt().coerceAtLeast(1)
         val delay = DoubleArray(delaySamples)
-        val wet = amount * ECHO_MAX_WET
-        val feedback = amount * ECHO_MAX_FEEDBACK
+        val wet = amount * maxWet
+        val feedback = amount * maxFeedback
         val output = DoubleArray(input.size)
         var index = 0
         for (sampleIndex in input.indices) {
@@ -260,20 +423,24 @@ class VoiceDistortionProcessor(
         input: DoubleArray,
         sampleRate: Int,
         amount: Double,
+        cutoffHz: Double,
+        modulationHz: Double,
+        noiseLevel: Double,
+        seed: Int,
     ): DoubleArray {
         if (input.isEmpty() || sampleRate <= 0) return input
 
         val output = DoubleArray(input.size)
-        val smoothing = 1.0 - exp(-2.0 * PI * FAN_NOISE_CUTOFF_HZ / sampleRate)
-        val modulationStep = 2.0 * PI * FAN_MODULATION_HZ / sampleRate
-        var noiseState = FAN_NOISE_SEED
+        val smoothing = 1.0 - exp(-2.0 * PI * cutoffHz / sampleRate)
+        val modulationStep = 2.0 * PI * modulationHz / sampleRate
+        var noiseState = seed
         var filteredNoise = 0.0
         for (index in input.indices) {
             noiseState = noiseState * 1664525 + 1013904223
             val whiteNoise = (noiseState ushr 8) / 8388608.0 - 1.0
             filteredNoise += smoothing * (whiteNoise - filteredNoise)
             val modulation = 0.75 + 0.25 * sin(modulationStep * index)
-            val fanNoise = filteredNoise * modulation * FAN_NOISE_LEVEL * amount
+            val fanNoise = filteredNoise * modulation * noiseLevel * amount
             output[index] = input[index] + fanNoise
         }
         return output
@@ -283,13 +450,16 @@ class VoiceDistortionProcessor(
         input: DoubleArray,
         sampleRate: Int,
         amount: Double,
+        carrierHz: Double,
+        wobbleHz: Double,
+        tremoloHz: Double,
     ): DoubleArray {
         if (input.isEmpty() || sampleRate <= 0) return input
 
         val output = DoubleArray(input.size)
-        val carrierStep = 2.0 * PI * ALIEN_CARRIER_HZ / sampleRate
-        val wobbleStep = 2.0 * PI * ALIEN_WOBBLE_HZ / sampleRate
-        val tremoloStep = 2.0 * PI * ALIEN_TREMOLO_HZ / sampleRate
+        val carrierStep = 2.0 * PI * carrierHz / sampleRate
+        val wobbleStep = 2.0 * PI * wobbleHz / sampleRate
+        val tremoloStep = 2.0 * PI * tremoloHz / sampleRate
         for (index in input.indices) {
             val carrier = sin(carrierStep * index + 4.0 * sin(wobbleStep * index))
             val tremolo = 0.7 + 0.3 * sin(tremoloStep * index)
@@ -303,14 +473,17 @@ class VoiceDistortionProcessor(
         input: DoubleArray,
         sampleRate: Int,
         amount: Double,
+        maxDelayMs: Double,
+        wobbleHz: Double,
+        tremoloHz: Double,
     ): DoubleArray {
         if (input.isEmpty() || sampleRate <= 0) return input
 
-        val maxDelay = (DRUNK_MAX_DELAY_SECONDS * sampleRate).roundToInt().coerceAtLeast(2)
+        val maxDelay = (maxDelayMs / 1000.0 * sampleRate).roundToInt().coerceAtLeast(2)
         val delayLine = DoubleArray(maxDelay + 1)
         val output = DoubleArray(input.size)
-        val wobbleStep = 2.0 * PI * DRUNK_WOBBLE_HZ / sampleRate
-        val tremoloStep = 2.0 * PI * DRUNK_TREMOLO_HZ / sampleRate
+        val wobbleStep = 2.0 * PI * wobbleHz / sampleRate
+        val tremoloStep = 2.0 * PI * tremoloHz / sampleRate
         var writeIndex = 0
         for (index in input.indices) {
             delayLine[writeIndex] = input[index]
@@ -335,12 +508,14 @@ class VoiceDistortionProcessor(
         input: DoubleArray,
         sampleRate: Int,
         amount: Double,
+        sliceMs: Double,
+        initialSeed: Int,
     ): DoubleArray {
         if (input.isEmpty() || sampleRate <= 0) return input
 
-        val blockSize = (STUTTER_SLICE_SECONDS * sampleRate).roundToInt().coerceAtLeast(1)
+        val blockSize = (sliceMs / 1000.0 * sampleRate).roundToInt().coerceAtLeast(1)
         val output = input.copyOf()
-        var seed = STUTTER_SEED
+        var seed = initialSeed
         var start = 0
         while (start < input.size) {
             val blockEnd = minOf(start + blockSize, input.size)
@@ -370,13 +545,16 @@ class VoiceDistortionProcessor(
         input: DoubleArray,
         sampleRate: Int,
         amount: Double,
+        lowHz: Double,
+        highHz: Double,
+        drive: Double,
     ): DoubleArray {
         if (input.isEmpty() || sampleRate <= 0) return input
 
-        var processed = applyHighPass(input, sampleRate, TELEPHONE_LOW_HZ)
-        processed = applyLowPass(processed, sampleRate, TELEPHONE_HIGH_HZ)
+        var processed = applyHighPass(input, sampleRate, lowHz)
+        processed = applyLowPass(processed, sampleRate, highHz)
         val saturated = DoubleArray(processed.size) { index ->
-            tanh(processed[index] * TELEPHONE_DRIVE)
+            tanh(processed[index] * drive)
         }
         return blend(input, saturated, amount)
     }
@@ -385,13 +563,16 @@ class VoiceDistortionProcessor(
         input: DoubleArray,
         sampleRate: Int,
         amount: Double,
+        lowHz: Double,
+        highHz: Double,
+        drive: Double,
     ): DoubleArray {
         if (input.isEmpty() || sampleRate <= 0) return input
 
-        var processed = applyHighPass(input, sampleRate, MEGAPHONE_LOW_HZ)
-        processed = applyLowPass(processed, sampleRate, MEGAPHONE_HIGH_HZ)
+        var processed = applyHighPass(input, sampleRate, lowHz)
+        processed = applyLowPass(processed, sampleRate, highHz)
         val driven = DoubleArray(processed.size) { index ->
-            tanh(processed[index] * MEGAPHONE_DRIVE)
+            tanh(processed[index] * drive)
         }
         return blend(input, driven, amount)
     }
@@ -400,16 +581,19 @@ class VoiceDistortionProcessor(
         input: DoubleArray,
         sampleRate: Int,
         amount: Double,
+        buzzHz: Double,
+        buzzRatio: Double,
+        flutterHz: Double,
     ): DoubleArray {
         if (input.isEmpty() || sampleRate <= 0) return input
 
         val output = DoubleArray(input.size)
-        val buzzStep = 2.0 * PI * BEE_BUZZ_HZ / sampleRate
-        val flutterStep = 2.0 * PI * BEE_FLUTTER_HZ / sampleRate
+        val buzzStep = 2.0 * PI * buzzHz / sampleRate
+        val flutterStep = 2.0 * PI * flutterHz / sampleRate
         for (index in input.indices) {
             val flutter = sin(flutterStep * index)
             val buzz = 0.5 * sin(buzzStep * index + flutter) +
-                0.5 * sin(buzzStep * BEE_BUZZ_RATIO * index - flutter)
+                0.5 * sin(buzzStep * buzzRatio * index - flutter)
             val wet = input[index] * (0.5 + 0.5 * buzz)
             output[index] = input[index] * (1.0 - amount) + wet * amount
         }
@@ -442,10 +626,15 @@ class VoiceDistortionProcessor(
         }
     }
 
-    private fun applyRobot(input: DoubleArray, amount: Double, sampleRate: Int): DoubleArray {
+    private fun applyRobot(
+        input: DoubleArray,
+        amount: Double,
+        sampleRate: Int,
+        carrierHz: Double,
+    ): DoubleArray {
         if (sampleRate <= 0) return input
 
-        val phaseStep = 2.0 * PI * ROBOT_CARRIER_HZ / sampleRate
+        val phaseStep = 2.0 * PI * carrierHz / sampleRate
         return DoubleArray(input.size) { index ->
             val dry = input[index]
             val modulated = dry * sin(phaseStep * index)
@@ -453,7 +642,11 @@ class VoiceDistortionProcessor(
         }
     }
 
-    private fun applyGrit(input: DoubleArray, amount: Double): DoubleArray {
+    private fun applyGrit(
+        input: DoubleArray,
+        amount: Double,
+        maxDrive: Double,
+    ): DoubleArray {
         var peak = 0.0
         for (sample in input) {
             val magnitude = abs(sample)
@@ -461,7 +654,7 @@ class VoiceDistortionProcessor(
         }
         if (peak < MIN_PEAK) return input
 
-        val drive = 1.0 + amount * MAX_GRIT_DRIVE
+        val drive = 1.0 + amount * maxDrive
         val normalization = tanh(drive * peak) / peak
         return DoubleArray(input.size) { index ->
             val dry = input[index]
@@ -481,39 +674,67 @@ class VoiceDistortionProcessor(
         const val MAX_NOISE_GATE_DB = -20.0
         const val MIN_OUTPUT_GAIN_DB = -12.0
         const val MAX_OUTPUT_GAIN_DB = 12.0
-        const val MAX_GRIT_DRIVE = 4.0
-        const val ECHO_DELAY_SECONDS = 0.18
-        const val ECHO_MAX_WET = 0.7
-        const val ECHO_MAX_FEEDBACK = 0.45
-        const val FAN_NOISE_CUTOFF_HZ = 1200.0
-        const val FAN_MODULATION_HZ = 0.3
-        const val FAN_NOISE_LEVEL = 0.18
-        const val FAN_NOISE_SEED = 0x12345678
-        const val STUTTER_SLICE_SECONDS = 0.12
-        const val STUTTER_SEED = 0x6D2B79F5
-        const val ALIEN_CARRIER_HZ = 220.0
-        const val ALIEN_WOBBLE_HZ = 0.6
-        const val ALIEN_TREMOLO_HZ = 5.0
-        const val DRUNK_MAX_DELAY_SECONDS = 0.015
-        const val DRUNK_WOBBLE_HZ = 0.8
-        const val DRUNK_TREMOLO_HZ = 4.5
-        const val TELEPHONE_LOW_HZ = 300.0
-        const val TELEPHONE_HIGH_HZ = 3400.0
-        const val TELEPHONE_DRIVE = 2.0
-        const val MEGAPHONE_LOW_HZ = 500.0
-        const val MEGAPHONE_HIGH_HZ = 3000.0
-        const val MEGAPHONE_DRIVE = 4.0
-        const val BEE_BUZZ_HZ = 35.0
-        const val BEE_BUZZ_RATIO = 1.17
-        const val BEE_FLUTTER_HZ = 0.7
-        const val MAX_COMPRESSOR_RATIO = 7.0
-        const val COMPRESSOR_THRESHOLD = 0.25
-        const val COMPRESSOR_ATTACK_SECONDS = 0.005
-        const val COMPRESSOR_RELEASE_SECONDS = 0.100
-        const val GATE_ATTACK_SECONDS = 0.005
-        const val GATE_RELEASE_SECONDS = 0.100
+        const val MIN_GRIT_DRIVE = 1.0
+        const val MAX_GRIT_DRIVE = 10.0
+        const val MIN_ECHO_DELAY_MS = 20.0
+        const val MAX_ECHO_DELAY_MS = 1000.0
+        const val MIN_ECHO_WET = 0.0
+        const val MAX_ECHO_WET = 1.0
+        const val MIN_ECHO_FEEDBACK = 0.0
+        const val MAX_ECHO_FEEDBACK = 0.95
+        const val MIN_FAN_CUTOFF_HZ = 100.0
+        const val MAX_FAN_CUTOFF_HZ = 8000.0
+        const val MIN_FAN_MODULATION_HZ = 0.0
+        const val MAX_FAN_MODULATION_HZ = 5.0
+        const val MIN_FAN_NOISE_LEVEL = 0.0
+        const val MAX_FAN_NOISE_LEVEL = 1.0
+        const val MIN_STUTTER_SLICE_MS = 20.0
+        const val MAX_STUTTER_SLICE_MS = 500.0
+        const val MIN_ALIEN_CARRIER_HZ = 20.0
+        const val MAX_ALIEN_CARRIER_HZ = 2000.0
+        const val MIN_ALIEN_WOBBLE_HZ = 0.0
+        const val MAX_ALIEN_WOBBLE_HZ = 10.0
+        const val MIN_ALIEN_TREMOLO_HZ = 0.0
+        const val MAX_ALIEN_TREMOLO_HZ = 20.0
+        const val MIN_DRUNK_MAX_DELAY_MS = 0.0
+        const val MAX_DRUNK_MAX_DELAY_MS = 50.0
+        const val MIN_DRUNK_WOBBLE_HZ = 0.0
+        const val MAX_DRUNK_WOBBLE_HZ = 10.0
+        const val MIN_DRUNK_TREMOLO_HZ = 0.0
+        const val MAX_DRUNK_TREMOLO_HZ = 20.0
+        const val MIN_TELEPHONE_LOW_HZ = 50.0
+        const val MAX_TELEPHONE_LOW_HZ = 1500.0
+        const val MIN_TELEPHONE_HIGH_HZ = 1000.0
+        const val MAX_TELEPHONE_HIGH_HZ = 8000.0
+        const val MIN_TELEPHONE_DRIVE = 1.0
+        const val MAX_TELEPHONE_DRIVE = 10.0
+        const val MIN_MEGAPHONE_LOW_HZ = 50.0
+        const val MAX_MEGAPHONE_LOW_HZ = 2000.0
+        const val MIN_MEGAPHONE_HIGH_HZ = 1000.0
+        const val MAX_MEGAPHONE_HIGH_HZ = 8000.0
+        const val MIN_MEGAPHONE_DRIVE = 1.0
+        const val MAX_MEGAPHONE_DRIVE = 10.0
+        const val MIN_BEE_BUZZ_HZ = 5.0
+        const val MAX_BEE_BUZZ_HZ = 200.0
+        const val MIN_BEE_BUZZ_RATIO = 1.0
+        const val MAX_BEE_BUZZ_RATIO = 2.0
+        const val MIN_BEE_FLUTTER_HZ = 0.0
+        const val MAX_BEE_FLUTTER_HZ = 10.0
+        const val MIN_COMPRESSOR_MAX_RATIO = 1.0
+        const val MAX_COMPRESSOR_MAX_RATIO = 20.0
+        const val MIN_COMPRESSOR_THRESHOLD = 0.01
+        const val MAX_COMPRESSOR_THRESHOLD = 1.0
+        const val MIN_COMPRESSOR_ATTACK_MS = 0.1
+        const val MAX_COMPRESSOR_ATTACK_MS = 100.0
+        const val MIN_COMPRESSOR_RELEASE_MS = 1.0
+        const val MAX_COMPRESSOR_RELEASE_MS = 1000.0
+        const val MIN_GATE_ATTACK_MS = 0.1
+        const val MAX_GATE_ATTACK_MS = 100.0
+        const val MIN_GATE_RELEASE_MS = 1.0
+        const val MAX_GATE_RELEASE_MS = 1000.0
+        const val MIN_ROBOT_CARRIER_HZ = 20.0
+        const val MAX_ROBOT_CARRIER_HZ = 500.0
         const val MIN_PEAK = 1e-9
-        const val ROBOT_CARRIER_HZ = 80.0
         const val DEFAULT_SAMPLE_RATE = 44_100
     }
 }

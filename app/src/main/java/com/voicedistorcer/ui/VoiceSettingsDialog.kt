@@ -7,16 +7,24 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.voicedistorcer.R
 import com.voicedistorcer.settings.VoicePreset
@@ -35,6 +43,8 @@ fun VoiceSettingsDialog(
     onEchoChanged: (Double) -> Unit,
     onFanChanged: (Double) -> Unit,
     onAdvancedSettingsChanged: (VoiceSettings) -> Unit,
+    onExportSettings: () -> Unit,
+    onImportSettings: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val funPresets = listOf(
@@ -266,6 +276,415 @@ fun VoiceSettingsDialog(
                 }
 
                 Text(
+                    text = stringResource(R.string.settings_effect_parameters_label),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_grit_drive_value,
+                        formatOneDecimal(settings.gritDrive),
+                    ),
+                    value = settings.gritDrive,
+                    valueRange = VoiceSettings.MIN_GRIT_DRIVE.toFloat()..
+                        VoiceSettings.MAX_GRIT_DRIVE.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withGritDrive(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_robot_carrier_value,
+                        formatInteger(settings.robotCarrierHz),
+                    ),
+                    value = settings.robotCarrierHz,
+                    valueRange = VoiceSettings.MIN_ROBOT_CARRIER_HZ.toFloat()..
+                        VoiceSettings.MAX_ROBOT_CARRIER_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withRobotCarrier(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_echo_delay_value,
+                        formatInteger(settings.echoDelayMs),
+                    ),
+                    value = settings.echoDelayMs,
+                    valueRange = VoiceSettings.MIN_ECHO_DELAY_MS.toFloat()..
+                        VoiceSettings.MAX_ECHO_DELAY_MS.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withEchoDelay(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_echo_wet_value,
+                        formatPercent(settings.echoWet),
+                    ),
+                    value = settings.echoWet,
+                    valueRange = VoiceSettings.MIN_ECHO_WET.toFloat()..
+                        VoiceSettings.MAX_ECHO_WET.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withEchoWet(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_echo_feedback_value,
+                        formatPercent(settings.echoFeedback),
+                    ),
+                    value = settings.echoFeedback,
+                    valueRange = VoiceSettings.MIN_ECHO_FEEDBACK.toFloat()..
+                        VoiceSettings.MAX_ECHO_FEEDBACK.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withEchoFeedback(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_fan_cutoff_value,
+                        formatInteger(settings.fanCutoffHz),
+                    ),
+                    value = settings.fanCutoffHz,
+                    valueRange = VoiceSettings.MIN_FAN_CUTOFF_HZ.toFloat()..
+                        VoiceSettings.MAX_FAN_CUTOFF_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withFanCutoff(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_fan_modulation_value,
+                        formatOneDecimal(settings.fanModulationHz),
+                    ),
+                    value = settings.fanModulationHz,
+                    valueRange = VoiceSettings.MIN_FAN_MODULATION_HZ.toFloat()..
+                        VoiceSettings.MAX_FAN_MODULATION_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withFanModulation(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_fan_noise_value,
+                        formatPercent(settings.fanNoiseLevel),
+                    ),
+                    value = settings.fanNoiseLevel,
+                    valueRange = VoiceSettings.MIN_FAN_NOISE_LEVEL.toFloat()..
+                        VoiceSettings.MAX_FAN_NOISE_LEVEL.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withFanNoiseLevel(it))
+                    },
+                )
+                IntSettingField(
+                    label = stringResource(R.string.settings_fan_seed_label),
+                    value = settings.fanNoiseSeed,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withFanNoiseSeed(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_stutter_slice_value,
+                        formatInteger(settings.stutterSliceMs),
+                    ),
+                    value = settings.stutterSliceMs,
+                    valueRange = VoiceSettings.MIN_STUTTER_SLICE_MS.toFloat()..
+                        VoiceSettings.MAX_STUTTER_SLICE_MS.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withStutterSlice(it))
+                    },
+                )
+                IntSettingField(
+                    label = stringResource(R.string.settings_stutter_seed_label),
+                    value = settings.stutterSeed,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withStutterSeed(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_alien_carrier_value,
+                        formatInteger(settings.alienCarrierHz),
+                    ),
+                    value = settings.alienCarrierHz,
+                    valueRange = VoiceSettings.MIN_ALIEN_CARRIER_HZ.toFloat()..
+                        VoiceSettings.MAX_ALIEN_CARRIER_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withAlienCarrier(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_alien_wobble_value,
+                        formatOneDecimal(settings.alienWobbleHz),
+                    ),
+                    value = settings.alienWobbleHz,
+                    valueRange = VoiceSettings.MIN_ALIEN_WOBBLE_HZ.toFloat()..
+                        VoiceSettings.MAX_ALIEN_WOBBLE_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withAlienWobble(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_alien_tremolo_value,
+                        formatOneDecimal(settings.alienTremoloHz),
+                    ),
+                    value = settings.alienTremoloHz,
+                    valueRange = VoiceSettings.MIN_ALIEN_TREMOLO_HZ.toFloat()..
+                        VoiceSettings.MAX_ALIEN_TREMOLO_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withAlienTremolo(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_drunk_delay_value,
+                        formatOneDecimal(settings.drunkMaxDelayMs),
+                    ),
+                    value = settings.drunkMaxDelayMs,
+                    valueRange = VoiceSettings.MIN_DRUNK_MAX_DELAY_MS.toFloat()..
+                        VoiceSettings.MAX_DRUNK_MAX_DELAY_MS.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withDrunkMaxDelay(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_drunk_wobble_value,
+                        formatOneDecimal(settings.drunkWobbleHz),
+                    ),
+                    value = settings.drunkWobbleHz,
+                    valueRange = VoiceSettings.MIN_DRUNK_WOBBLE_HZ.toFloat()..
+                        VoiceSettings.MAX_DRUNK_WOBBLE_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withDrunkWobble(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_drunk_tremolo_value,
+                        formatOneDecimal(settings.drunkTremoloHz),
+                    ),
+                    value = settings.drunkTremoloHz,
+                    valueRange = VoiceSettings.MIN_DRUNK_TREMOLO_HZ.toFloat()..
+                        VoiceSettings.MAX_DRUNK_TREMOLO_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withDrunkTremolo(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_telephone_low_value,
+                        formatInteger(settings.telephoneLowHz),
+                    ),
+                    value = settings.telephoneLowHz,
+                    valueRange = VoiceSettings.MIN_TELEPHONE_LOW_HZ.toFloat()..
+                        VoiceSettings.MAX_TELEPHONE_LOW_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withTelephoneLow(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_telephone_high_value,
+                        formatInteger(settings.telephoneHighHz),
+                    ),
+                    value = settings.telephoneHighHz,
+                    valueRange = VoiceSettings.MIN_TELEPHONE_HIGH_HZ.toFloat()..
+                        VoiceSettings.MAX_TELEPHONE_HIGH_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withTelephoneHigh(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_telephone_drive_value,
+                        formatOneDecimal(settings.telephoneDrive),
+                    ),
+                    value = settings.telephoneDrive,
+                    valueRange = VoiceSettings.MIN_TELEPHONE_DRIVE.toFloat()..
+                        VoiceSettings.MAX_TELEPHONE_DRIVE.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withTelephoneDrive(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_megaphone_low_value,
+                        formatInteger(settings.megaphoneLowHz),
+                    ),
+                    value = settings.megaphoneLowHz,
+                    valueRange = VoiceSettings.MIN_MEGAPHONE_LOW_HZ.toFloat()..
+                        VoiceSettings.MAX_MEGAPHONE_LOW_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withMegaphoneLow(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_megaphone_high_value,
+                        formatInteger(settings.megaphoneHighHz),
+                    ),
+                    value = settings.megaphoneHighHz,
+                    valueRange = VoiceSettings.MIN_MEGAPHONE_HIGH_HZ.toFloat()..
+                        VoiceSettings.MAX_MEGAPHONE_HIGH_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withMegaphoneHigh(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_megaphone_drive_value,
+                        formatOneDecimal(settings.megaphoneDrive),
+                    ),
+                    value = settings.megaphoneDrive,
+                    valueRange = VoiceSettings.MIN_MEGAPHONE_DRIVE.toFloat()..
+                        VoiceSettings.MAX_MEGAPHONE_DRIVE.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withMegaphoneDrive(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_bee_buzz_value,
+                        formatOneDecimal(settings.beeBuzzHz),
+                    ),
+                    value = settings.beeBuzzHz,
+                    valueRange = VoiceSettings.MIN_BEE_BUZZ_HZ.toFloat()..
+                        VoiceSettings.MAX_BEE_BUZZ_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withBeeBuzz(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_bee_ratio_value,
+                        formatTwoDecimals(settings.beeBuzzRatio),
+                    ),
+                    value = settings.beeBuzzRatio,
+                    valueRange = VoiceSettings.MIN_BEE_BUZZ_RATIO.toFloat()..
+                        VoiceSettings.MAX_BEE_BUZZ_RATIO.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withBeeBuzzRatio(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_bee_flutter_value,
+                        formatOneDecimal(settings.beeFlutterHz),
+                    ),
+                    value = settings.beeFlutterHz,
+                    valueRange = VoiceSettings.MIN_BEE_FLUTTER_HZ.toFloat()..
+                        VoiceSettings.MAX_BEE_FLUTTER_HZ.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withBeeFlutter(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_compressor_ratio_value,
+                        formatOneDecimal(settings.compressorMaxRatio),
+                    ),
+                    value = settings.compressorMaxRatio,
+                    valueRange = VoiceSettings.MIN_COMPRESSOR_MAX_RATIO.toFloat()..
+                        VoiceSettings.MAX_COMPRESSOR_MAX_RATIO.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withCompressorMaxRatio(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_compressor_threshold_value,
+                        formatPercent(settings.compressorThreshold),
+                    ),
+                    value = settings.compressorThreshold,
+                    valueRange = VoiceSettings.MIN_COMPRESSOR_THRESHOLD.toFloat()..
+                        VoiceSettings.MAX_COMPRESSOR_THRESHOLD.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withCompressorThreshold(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_compressor_attack_value,
+                        formatOneDecimal(settings.compressorAttackMs),
+                    ),
+                    value = settings.compressorAttackMs,
+                    valueRange = VoiceSettings.MIN_COMPRESSOR_ATTACK_MS.toFloat()..
+                        VoiceSettings.MAX_COMPRESSOR_ATTACK_MS.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withCompressorAttack(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_compressor_release_value,
+                        formatOneDecimal(settings.compressorReleaseMs),
+                    ),
+                    value = settings.compressorReleaseMs,
+                    valueRange = VoiceSettings.MIN_COMPRESSOR_RELEASE_MS.toFloat()..
+                        VoiceSettings.MAX_COMPRESSOR_RELEASE_MS.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withCompressorRelease(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_gate_attack_value,
+                        formatOneDecimal(settings.gateAttackMs),
+                    ),
+                    value = settings.gateAttackMs,
+                    valueRange = VoiceSettings.MIN_GATE_ATTACK_MS.toFloat()..
+                        VoiceSettings.MAX_GATE_ATTACK_MS.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withGateAttack(it))
+                    },
+                )
+                SettingSlider(
+                    label = stringResource(
+                        R.string.settings_gate_release_value,
+                        formatOneDecimal(settings.gateReleaseMs),
+                    ),
+                    value = settings.gateReleaseMs,
+                    valueRange = VoiceSettings.MIN_GATE_RELEASE_MS.toFloat()..
+                        VoiceSettings.MAX_GATE_RELEASE_MS.toFloat(),
+                    steps = 0,
+                    onValueChange = {
+                        onAdvancedSettingsChanged(settings.withGateRelease(it))
+                    },
+                )
+
+                Text(
                     text = stringResource(R.string.settings_cleanup_label),
                     style = MaterialTheme.typography.titleSmall,
                 )
@@ -416,6 +835,23 @@ fun VoiceSettingsDialog(
                 )
 
                 Text(
+                    text = stringResource(R.string.settings_backup_label),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                OutlinedButton(
+                    onClick = onExportSettings,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.settings_export_settings))
+                }
+                OutlinedButton(
+                    onClick = onImportSettings,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.settings_import_settings))
+                }
+
+                Text(
                     text = stringResource(R.string.settings_anonymization_note),
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 4.dp),
@@ -447,6 +883,31 @@ private fun SettingSlider(
         onValueChange = { onValueChange(it.toDouble()) },
         valueRange = valueRange,
         steps = steps,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun IntSettingField(
+    label: String,
+    value: Int,
+    onValueChange: (Int) -> Unit,
+) {
+    var text by remember(value) { mutableStateOf(value.toString()) }
+    Text(
+        text = label,
+        style = MaterialTheme.typography.titleSmall,
+    )
+    OutlinedTextField(
+        value = text,
+        onValueChange = { newValue ->
+            if (newValue.length <= 10 && newValue.all { it.isDigit() }) {
+                text = newValue
+                newValue.toIntOrNull()?.let(onValueChange)
+            }
+        },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = Modifier.fillMaxWidth(),
     )
 }
@@ -496,6 +957,9 @@ private fun formatSignedInteger(value: Double): String =
 
 private fun formatOneDecimal(value: Double): String =
     String.format(Locale.US, "%.1f", value)
+
+private fun formatTwoDecimals(value: Double): String =
+    String.format(Locale.US, "%.2f", value)
 
 private fun formatPercent(value: Double): String =
     String.format(Locale.US, "%.0f%%", value.coerceIn(0.0, 1.0) * 100.0)

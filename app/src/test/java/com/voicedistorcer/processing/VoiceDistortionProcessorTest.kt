@@ -503,6 +503,130 @@ class VoiceDistortionProcessorTest {
         assertTrue("Peak was $peak", peak < 32)
     }
 
+    @Test
+    fun echoDelayChangesTheOutput() {
+        val input = sineWave(sampleCount = 8820, frequency = 220.0)
+
+        val shortDelay = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                echo = 1.0,
+                echoDelayMs = 50.0,
+            ),
+        ).process(input)
+        val longDelay = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                echo = 1.0,
+                echoDelayMs = 250.0,
+            ),
+        ).process(input)
+
+        assertFalse(shortDelay.contentEquals(longDelay))
+    }
+
+    @Test
+    fun fanSeedChangesTheNoisePattern() {
+        val input = ShortArray(4410)
+
+        val first = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                fan = 1.0,
+                fanNoiseLevel = 0.5,
+                fanNoiseSeed = 1,
+            ),
+        ).process(input)
+        val second = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                fan = 1.0,
+                fanNoiseLevel = 0.5,
+                fanNoiseSeed = 2,
+            ),
+        ).process(input)
+
+        assertFalse(first.contentEquals(second))
+    }
+
+    @Test
+    fun stutterSliceChangesTheOutput() {
+        val input = sineWave(sampleCount = 8820, frequency = 333.0)
+
+        val shortSlice = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                stutter = 1.0,
+                stutterSliceMs = 50.0,
+            ),
+        ).process(input)
+        val longSlice = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                stutter = 1.0,
+                stutterSliceMs = 200.0,
+            ),
+        ).process(input)
+
+        assertFalse(shortSlice.contentEquals(longSlice))
+    }
+
+    @Test
+    fun robotCarrierChangesTheOutput() {
+        val input = sineWave(sampleCount = 8820, frequency = 220.0)
+
+        val lowCarrier = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                robot = 1.0,
+                robotCarrierHz = 40.0,
+            ),
+        ).process(input)
+        val highCarrier = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                robot = 1.0,
+                robotCarrierHz = 160.0,
+            ),
+        ).process(input)
+
+        assertFalse(lowCarrier.contentEquals(highCarrier))
+    }
+
+    @Test
+    fun telephoneCutoffsChangeTheOutput() {
+        val input = sineWave(sampleCount = 8820, frequency = 440.0)
+
+        val wideBand = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                telephone = 1.0,
+                telephoneLowHz = 100.0,
+                telephoneHighHz = 7000.0,
+            ),
+        ).process(input)
+        val narrowBand = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                telephone = 1.0,
+                telephoneLowHz = 1000.0,
+                telephoneHighHz = 2000.0,
+            ),
+        ).process(input)
+
+        assertFalse(wideBand.contentEquals(narrowBand))
+    }
+
     private fun sineWave(
         sampleCount: Int,
         frequency: Double,
