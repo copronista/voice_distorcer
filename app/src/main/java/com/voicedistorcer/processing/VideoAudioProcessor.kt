@@ -39,7 +39,8 @@ object VideoAudioProcessor {
 
         val decodedAudio = MediaAudioDecoder.decode(inputFile)
         val syncedConfig = config.copy(speed = 1.0)
-        val processed = VoiceDistortionProcessor(syncedConfig).process(decodedAudio.samples)
+        val processed = VoiceDistortionProcessor(syncedConfig)
+            .process(decodedAudio.samples, decodedAudio.sampleRate)
         require(processed.isNotEmpty()) { "Processed audio is empty" }
 
         val targetSamples = if (videoDurationUs > 0) {

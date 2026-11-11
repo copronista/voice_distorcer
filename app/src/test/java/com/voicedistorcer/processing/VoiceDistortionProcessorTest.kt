@@ -40,6 +40,18 @@ class VoiceDistortionProcessorTest {
     }
 
     @Test
+    fun formantShiftChangesTheSignalAndPreservesDuration() {
+        val input = sineWave(sampleCount = 8820, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(pitchSemitones = 0.0, formantSemitones = 4.0),
+        ).process(input)
+
+        assertEquals(input.size, output.size)
+        assertFalse(input.contentEquals(output))
+    }
+
+    @Test
     fun speedAboveOneShortensTheClip() {
         val input = sineWave(sampleCount = 44_100, frequency = 220.0)
 
@@ -77,6 +89,79 @@ class VoiceDistortionProcessorTest {
     }
 
     @Test
+    fun gritChangesTheSignalAndPreservesDuration() {
+        val input = sineWave(sampleCount = 8820, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                grit = 0.8,
+            ),
+        ).process(input)
+
+        assertEquals(input.size, output.size)
+        assertFalse(input.contentEquals(output))
+    }
+
+    @Test
+    fun gritPreservesTheInputPeakLevel() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0, amplitude = 3_000.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                grit = 1.0,
+            ),
+        ).process(input)
+
+        val inputPeak = input.maxOf { abs(it.toInt()) }
+        val outputPeak = output.maxOf { abs(it.toInt()) }
+        assertEquals(inputPeak.toDouble(), outputPeak.toDouble(), 1.0)
+    }
+
+    @Test
+    fun robotChangesTheSignalAndPreservesDuration() {
+        val input = sineWave(sampleCount = 8820, frequency = 220.0)
+
+        val output = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                robot = 0.8,
+            ),
+        ).process(input)
+
+        assertEquals(input.size, output.size)
+        assertFalse(input.contentEquals(output))
+    }
+
+    @Test
+    fun characterEffectsAreClampedToSupportedRange() {
+        val input = sineWave(sampleCount = 4410, frequency = 220.0)
+
+        val tooMuch = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                grit = 10.0,
+                robot = 10.0,
+            ),
+        ).process(input)
+        val clamped = VoiceDistortionProcessor(
+            DistortionConfig(
+                pitchSemitones = 0.0,
+                formantSemitones = 0.0,
+                grit = 1.0,
+                robot = 1.0,
+            ),
+        ).process(input)
+
+        assertTrue(tooMuch.contentEquals(clamped))
+    }
+
+    @Test
     fun emptyInputProducesEmptyOutput() {
         val output = VoiceDistortionProcessor().process(ShortArray(0))
 
@@ -109,10 +194,13 @@ class VoiceDistortionProcessorTest {
         assertTrue("Peak was $peak", peak < 32)
     }
 
-    private fun sineWave(sampleCount: Int, frequency: Double): ShortArray =
-        ShortArray(sampleCount) { index ->
-            (sin(2.0 * PI * frequency * index / SAMPLE_RATE) * 20_000.0).toInt().toShort()
-        }
+    private fun sineWave(
+        sampleCount: Int,
+        frequency: Double,
+        amplitude: Double = 20_000.0,
+    ): ShortArray = ShortArray(sampleCount) { index ->
+        (sin(2.0 * PI * frequency * index / SAMPLE_RATE) * amplitude).toInt().toShort()
+    }
 
     private fun estimateFrequency(samples: ShortArray): Double {
         val start = samples.size / 4

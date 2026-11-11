@@ -15,7 +15,8 @@ object AudioFileProcessor {
         require(inputFile.exists()) { "Input audio does not exist" }
 
         val decoded = MediaAudioDecoder.decode(inputFile)
-        val processed = VoiceDistortionProcessor(config).process(decoded.samples)
+        val processed = VoiceDistortionProcessor(config)
+            .process(decoded.samples, decoded.sampleRate)
         require(processed.isNotEmpty()) { "Processed audio is empty" }
 
         AudioEncoder.encodeToM4a(processed, decoded.sampleRate, outputFile)

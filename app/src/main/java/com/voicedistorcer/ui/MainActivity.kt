@@ -241,7 +241,10 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
             settings = settings,
             onPresetSelected = viewModel::applyPreset,
             onToneChanged = viewModel::updateTone,
+            onFormantChanged = viewModel::updateFormant,
             onSpeedChanged = viewModel::updateSpeed,
+            onGritChanged = viewModel::updateGrit,
+            onRobotChanged = viewModel::updateRobot,
             onDismiss = { showSettings = false },
         )
     }

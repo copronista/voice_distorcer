@@ -27,8 +27,11 @@
     <string name="preset_male">Male</string>
     <string name="preset_female">Female</string>
     <string name="settings_tone_value">Tone: %1$s semitones</string>
+    <string name="settings_formant_value">Formant: %1$s semitones</string>
     <string name="settings_speed_value">Speed: %1$sx</string>
-    <string name="settings_anonymization_note">Voice anonymization is always applied. Changing these settings only adjusts the resulting character of the voice.</string>
+    <string name="settings_grit_value">Grit: %1$s</string>
+    <string name="settings_robot_value">Robot: %1$s</string>
+    <string name="settings_anonymization_note">Voice anonymization is always applied. Changes apply to the next recording or imported media.</string>
     <string name="settings_done">Done</string>
     <string name="record_video">Record video</string>
     <string name="video_title">Video message</string>

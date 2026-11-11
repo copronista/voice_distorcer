@@ -15,12 +15,17 @@ class VoiceSettingsStore(context: Context) {
         val tone = preferences.getFloat(KEY_TONE, fallback.toneSemitones.toFloat()).toDouble()
         val formant = preferences.getFloat(KEY_FORMANT, fallback.formantSemitones.toFloat()).toDouble()
         val speed = preferences.getFloat(KEY_SPEED, fallback.speed.toFloat()).toDouble()
+        val grit = preferences.getFloat(KEY_GRIT, fallback.grit.toFloat()).toDouble()
+        val robot = preferences.getFloat(KEY_ROBOT, fallback.robot.toFloat()).toDouble()
 
+        val safeTone = tone.coerceIn(VoiceSettings.MIN_TONE, VoiceSettings.MAX_TONE)
         return VoiceSettings(
             preset = preset,
-            toneSemitones = tone.coerceIn(VoiceSettings.MIN_TONE, VoiceSettings.MAX_TONE),
-            formantSemitones = formant.coerceIn(VoiceSettings.MIN_TONE, VoiceSettings.MAX_TONE),
+            toneSemitones = safeTone,
+            formantSemitones = VoiceSettings.sanitizeFormant(safeTone, formant),
             speed = speed.coerceIn(VoiceSettings.MIN_SPEED, VoiceSettings.MAX_SPEED),
+            grit = grit.coerceIn(VoiceSettings.MIN_EFFECT, VoiceSettings.MAX_EFFECT),
+            robot = robot.coerceIn(VoiceSettings.MIN_EFFECT, VoiceSettings.MAX_EFFECT),
         )
     }
 
@@ -30,6 +35,8 @@ class VoiceSettingsStore(context: Context) {
             .putFloat(KEY_TONE, settings.toneSemitones.toFloat())
             .putFloat(KEY_FORMANT, settings.formantSemitones.toFloat())
             .putFloat(KEY_SPEED, settings.speed.toFloat())
+            .putFloat(KEY_GRIT, settings.grit.toFloat())
+            .putFloat(KEY_ROBOT, settings.robot.toFloat())
             .apply()
     }
 
@@ -39,5 +46,7 @@ class VoiceSettingsStore(context: Context) {
         const val KEY_TONE = "tone"
         const val KEY_FORMANT = "formant"
         const val KEY_SPEED = "speed"
+        const val KEY_GRIT = "grit"
+        const val KEY_ROBOT = "robot"
     }
 }

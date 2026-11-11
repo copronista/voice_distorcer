@@ -119,7 +119,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 val currentSettings = _settings.value
                 val processed = withContext(Dispatchers.Default) {
-                    VoiceDistortionProcessor(currentSettings.toDistortionConfig()).process(pcm)
+                    VoiceDistortionProcessor(currentSettings.toDistortionConfig())
+                        .process(pcm, RecordingEngine.SAMPLE_RATE)
                 }
                 if (processed.isEmpty()) {
                     throw IllegalStateException("Processed clip is empty")
@@ -171,8 +172,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         updateSettings(_settings.value.withTone(semitones))
     }
 
+    fun updateFormant(semitones: Double) {
+        updateSettings(_settings.value.withFormant(semitones))
+    }
+
     fun updateSpeed(speed: Double) {
         updateSettings(_settings.value.withSpeed(speed))
+    }
+
+    fun updateGrit(value: Double) {
+        updateSettings(_settings.value.withGrit(value))
+    }
+
+    fun updateRobot(value: Double) {
+        updateSettings(_settings.value.withRobot(value))
     }
 
     private fun updateSettings(settings: VoiceSettings) {
