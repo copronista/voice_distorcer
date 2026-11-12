@@ -16,6 +16,7 @@ Native Android app (Kotlin) that:
 - Every release must ship BOTH variants: the full build (audio + video) and the audio-only build (no video support).
 - The audio-only variant must exclude camera/video dependencies and features to minimize external libraries.
 - The audio-only variant must not request microphone or camera permissions and must only support importing or receiving audio files.
+- Use the `minimal` suffix for the audio-only release tag, release title, and APK filename; do not use `audio` as the suffix.
 - Keep versioning and release notes aligned across both variants.
 
 ## Expected wiring (agreed plan)
