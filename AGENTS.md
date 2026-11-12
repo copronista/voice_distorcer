@@ -12,6 +12,16 @@ Native Android app (Kotlin) that:
 - The share step MUST go through the Android Sharesheet (`Intent.ACTION_SEND` with a `content://` URI served by a `FileProvider`). External messaging apps must be able to read the file, so never share with `file://` or raw absolute storage paths.
 - Voice anonymization is the core feature, not a nice-to-have: the recorded audio must be processed (e.g. pitch/formant shifting) before sharing. Do not ship a version that shares the unprocessed clip.
 
+## Release policy (do not skip)
+- Every release must ship BOTH variants: the full build (audio + video) and the audio-only build (no video support).
+- The audio-only variant must exclude camera/video dependencies and features to minimize external libraries.
+- The audio-only variant must not request microphone or camera permissions and must only support importing or receiving audio files.
+- Keep versioning and release notes aligned across both variants.
+
+## Audio-only branch
+- This branch is import/share only: do not add microphone, camera, video capture, or video processing.
+- Accept audio through `ACTION_VIEW`, `ACTION_SEND`, or the in-app document picker, then anonymize and share it.
+
 ## Expected wiring (agreed plan)
 - Recording: Android microphone APIs (`MediaRecorder` or `AudioRecord`) → requires `RECORD_AUDIO` runtime permission plus manifest declaration.
 - Processing: read the recorded file, apply distortion, write an anonymized output file.

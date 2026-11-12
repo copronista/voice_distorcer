@@ -30,9 +30,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -106,20 +103,10 @@ private fun ImportScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isPreviewPlaying by viewModel.isPreviewPlaying.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var showVideoPreview by remember { mutableStateOf(false) }
 
     LaunchedEffect(viewModel) {
         viewModel.previewErrors.collect {
             Toast.makeText(context, R.string.error_preview_failed, Toast.LENGTH_LONG).show()
-        }
-    }
-
-    LaunchedEffect(state) {
-        val currentState = state
-        if (currentState !is ImportUiState.Ready ||
-            currentState.kind != ImportedMediaKind.VIDEO
-        ) {
-            showVideoPreview = false
         }
     }
 
@@ -129,7 +116,7 @@ private fun ImportScreen(
                 title = { Text(stringResource(R.string.import_title)) },
                 actions = {
                     TextButton(onClick = onClose) {
-                        Text(stringResource(R.string.video_close))
+                        Text(stringResource(R.string.close))
                     }
                 },
             )
@@ -153,35 +140,16 @@ private fun ImportScreen(
 
             ImportStatusCard(state)
 
-            if (readyState?.kind == ImportedMediaKind.VIDEO) {
-                Text(
-                    text = stringResource(R.string.video_settings_note),
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center,
-                )
-            }
-
             Spacer(modifier = Modifier.weight(1f))
 
             if (readyState != null) {
                 OutlinedButton(
-                    onClick = {
-                        if (readyState.kind == ImportedMediaKind.VIDEO) {
-                            showVideoPreview = true
-                        } else {
-                            viewModel.togglePreview()
-                        }
-                    },
+                    onClick = viewModel::togglePreview,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
                         stringResource(
-                            when {
-                                readyState.kind == ImportedMediaKind.VIDEO ->
-                                    R.string.video_preview
-                                isPreviewPlaying -> R.string.stop_preview
-                                else -> R.string.preview
-                            },
+                            if (isPreviewPlaying) R.string.stop_preview else R.string.preview,
                         ),
                     )
                 }
@@ -191,26 +159,14 @@ private fun ImportScreen(
                         if (!viewModel.share(context)) {
                             Toast.makeText(
                                 context,
-                                if (readyState.kind == ImportedMediaKind.VIDEO) {
-                                    R.string.error_video_share_failed
-                                } else {
-                                    R.string.error_share_failed
-                                },
+                                R.string.error_share_failed,
                                 Toast.LENGTH_LONG,
                             ).show()
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(
-                        stringResource(
-                            if (readyState.kind == ImportedMediaKind.VIDEO) {
-                                R.string.video_share
-                            } else {
-                                R.string.share
-                            },
-                        ),
-                    )
+                    Text(stringResource(R.string.share))
                 }
             }
 
@@ -220,14 +176,6 @@ private fun ImportScreen(
                 textAlign = TextAlign.Center,
             )
         }
-    }
-
-    val readyState = state as? ImportUiState.Ready
-    if (showVideoPreview && readyState?.kind == ImportedMediaKind.VIDEO) {
-        VideoPreviewDialog(
-            file = readyState.file,
-            onDismiss = { showVideoPreview = false },
-        )
     }
 }
 
@@ -259,13 +207,7 @@ private fun ImportStatusCard(state: ImportUiState) {
                 }
                 is ImportUiState.Ready -> {
                     Text(
-                        text = stringResource(
-                            if (state.kind == ImportedMediaKind.VIDEO) {
-                                R.string.import_status_ready_video
-                            } else {
-                                R.string.import_status_ready_audio
-                            },
-                        ),
+                        text = stringResource(R.string.import_status_ready),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(

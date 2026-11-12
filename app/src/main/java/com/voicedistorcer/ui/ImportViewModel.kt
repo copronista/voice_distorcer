@@ -2,8 +2,6 @@ package com.voicedistorcer.ui
 
 import android.app.Application
 import android.content.Context
-import android.media.MediaExtractor
-import android.media.MediaFormat
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
@@ -12,7 +10,6 @@ import androidx.lifecycle.viewModelScope
 import com.voicedistorcer.R
 import com.voicedistorcer.playback.AudioPreviewPlayer
 import com.voicedistorcer.processing.AudioFileProcessor
-import com.voicedistorcer.processing.VideoAudioProcessor
 import com.voicedistorcer.settings.VoiceSettingsStore
 import com.voicedistorcer.sharing.ShareGateway
 import java.io.File
@@ -79,33 +76,28 @@ class ImportViewModel(application: Application) : AndroidViewModel(application) 
                 val resolvedMime = withContext(Dispatchers.IO) {
                     resolveMimeType(uri, mimeType)
                 }
-                val kind = withContext(Dispatchers.IO) {
-                    detectKind(rawFile, resolvedMime)
+                if (resolvedMime?.startsWith("video/") == true) {
+                    rawFile.delete()
+                    _uiState.value = ImportUiState.Error(
+                        appContext.getString(R.string.error_import_unsupported),
+                    )
+                    return@launch
                 }
+
                 val config = settingsStore.load().toDistortionConfig()
                 val target = File(
                     exportsDirectory,
-                    when (kind) {
-                        ImportedMediaKind.AUDIO ->
-                            "anonymized_audio_${System.currentTimeMillis()}.m4a"
-                        ImportedMediaKind.VIDEO ->
-                            "anonymized_video_${System.currentTimeMillis()}.mp4"
-                    },
+                    "anonymized_audio_${System.currentTimeMillis()}.m4a",
                 )
                 exportFile = target
 
                 val durationMs = withContext(Dispatchers.IO) {
-                    when (kind) {
-                        ImportedMediaKind.AUDIO ->
-                            AudioFileProcessor.process(rawFile, target, config).durationMs
-                        ImportedMediaKind.VIDEO ->
-                            VideoAudioProcessor.process(rawFile, target, config).durationMs
-                    }
+                    AudioFileProcessor.process(rawFile, target, config).durationMs
                 }
 
                 ensureActive()
                 rawFile.delete()
-                _uiState.value = ImportUiState.Ready(target, durationMs, kind)
+                _uiState.value = ImportUiState.Ready(target, durationMs)
             } catch (cancelled: CancellationException) {
                 rawFile.delete()
                 exportFile?.delete()
@@ -132,21 +124,11 @@ class ImportViewModel(application: Application) : AndroidViewModel(application) 
     fun share(context: Context): Boolean {
         val state = _uiState.value as? ImportUiState.Ready ?: return false
         stopPreview()
-        return ShareGateway.share(
-            context = context,
-            file = state.file,
-            mimeType = if (state.kind == ImportedMediaKind.VIDEO) "video/*" else "audio/*",
-            chooserTitleRes = if (state.kind == ImportedMediaKind.VIDEO) {
-                R.string.share_video_chooser_title
-            } else {
-                R.string.share_chooser_title
-            },
-        )
+        return ShareGateway.share(context, state.file)
     }
 
     fun togglePreview() {
         val state = _uiState.value as? ImportUiState.Ready ?: return
-        if (state.kind != ImportedMediaKind.AUDIO) return
         previewPlayer.toggle(state.file)
     }
 
@@ -187,28 +169,6 @@ class ImportViewModel(application: Application) : AndroidViewModel(application) 
             if (cursor.moveToFirst()) cursor.getString(0) else null
         }
     }.getOrNull()
-
-    private fun detectKind(file: File, mimeType: String?): ImportedMediaKind {
-        if (mimeType?.startsWith("video/") == true) return ImportedMediaKind.VIDEO
-        if (mimeType?.startsWith("audio/") == true) return ImportedMediaKind.AUDIO
-        return if (hasVideoTrack(file)) ImportedMediaKind.VIDEO else ImportedMediaKind.AUDIO
-    }
-
-    private fun hasVideoTrack(file: File): Boolean {
-        val extractor = MediaExtractor()
-        return try {
-            extractor.setDataSource(file.absolutePath)
-            (0 until extractor.trackCount).any { index ->
-                extractor.getTrackFormat(index)
-                    .getString(MediaFormat.KEY_MIME)
-                    ?.startsWith("video/") == true
-            }
-        } catch (_: Exception) {
-            false
-        } finally {
-            extractor.release()
-        }
-    }
 
     private companion object {
         const val GENERIC_MIME = "application/octet-stream"
