@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Voice Distorcer</string>
-    <string name="intro">Open an audio file or share audio to Voice Distorcer. Your voice is pitch- and formant-shifted on this device before you share it.</string>
+    <string name="app_name">Voice Distorcer (minimal)</string>
+    <string name="intro">Open an audio file or share audio to Voice Distorcer (minimal). Your voice is pitch- and formant-shifted on this device before you share it.</string>
     <string name="open_audio">Open audio file</string>
     <string name="preview">Listen to anonymized clip</string>
     <string name="stop_preview">Stop playback</string>
