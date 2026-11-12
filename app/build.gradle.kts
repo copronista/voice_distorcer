@@ -9,7 +9,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.voicedistorcer"
+        applicationId = "com.voicedistorcer.audio"
         minSdk = 24
         targetSdk = 35
         versionCode = 6
