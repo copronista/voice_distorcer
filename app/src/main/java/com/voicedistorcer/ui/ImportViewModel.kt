@@ -11,6 +11,7 @@ import com.voicedistorcer.R
 import com.voicedistorcer.playback.AudioPreviewPlayer
 import com.voicedistorcer.processing.AudioFileProcessor
 import com.voicedistorcer.settings.VoiceSettingsStore
+import com.voicedistorcer.sharing.ExportFileNames
 import com.voicedistorcer.sharing.ShareGateway
 import java.io.File
 import java.util.Locale
@@ -87,7 +88,7 @@ class ImportViewModel(application: Application) : AndroidViewModel(application) 
                 val config = settingsStore.load().toDistortionConfig()
                 val target = File(
                     exportsDirectory,
-                    "anonymized_audio.m4a",
+                    ExportFileNames.audio(),
                 )
                 exportFile = target
 
