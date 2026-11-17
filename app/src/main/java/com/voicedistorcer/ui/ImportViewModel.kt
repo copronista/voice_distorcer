@@ -87,7 +87,7 @@ class ImportViewModel(application: Application) : AndroidViewModel(application) 
                 val config = settingsStore.load().toDistortionConfig()
                 val target = File(
                     exportsDirectory,
-                    "anonymized_audio_${System.currentTimeMillis()}.m4a",
+                    "anonymized_audio.m4a",
                 )
                 exportFile = target
 
