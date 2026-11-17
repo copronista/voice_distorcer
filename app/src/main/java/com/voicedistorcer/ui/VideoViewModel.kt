@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.voicedistorcer.R
 import com.voicedistorcer.processing.VideoAudioProcessor
 import com.voicedistorcer.settings.VoiceSettingsStore
+import com.voicedistorcer.sharing.ExportFileNames
 import com.voicedistorcer.sharing.ShareGateway
 import java.io.File
 import kotlinx.coroutines.CancellationException
@@ -113,7 +114,7 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
             exportsDirectory.mkdirs()
             val exportFile = File(
                 exportsDirectory,
-                "anonymized_video.mp4",
+                ExportFileNames.video(),
             )
             try {
                 val config = settingsStore.load().toDistortionConfig()

@@ -14,6 +14,7 @@ import com.voicedistorcer.playback.AudioPreviewPlayer
 import com.voicedistorcer.processing.AudioFileProcessor
 import com.voicedistorcer.processing.VideoAudioProcessor
 import com.voicedistorcer.settings.VoiceSettingsStore
+import com.voicedistorcer.sharing.ExportFileNames
 import com.voicedistorcer.sharing.ShareGateway
 import java.io.File
 import java.util.Locale
@@ -87,9 +88,9 @@ class ImportViewModel(application: Application) : AndroidViewModel(application) 
                     exportsDirectory,
                     when (kind) {
                         ImportedMediaKind.AUDIO ->
-                            "anonymized_audio.m4a"
+                            ExportFileNames.audio()
                         ImportedMediaKind.VIDEO ->
-                            "anonymized_video.mp4"
+                            ExportFileNames.video()
                     },
                 )
                 exportFile = target

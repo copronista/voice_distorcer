@@ -16,6 +16,7 @@ import com.voicedistorcer.settings.VoicePreset
 import com.voicedistorcer.settings.VoiceSettings
 import com.voicedistorcer.settings.VoiceSettingsCodec
 import com.voicedistorcer.settings.VoiceSettingsStore
+import com.voicedistorcer.sharing.ExportFileNames
 import com.voicedistorcer.sharing.ShareGateway
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -131,7 +132,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     throw IllegalStateException("Processed clip is empty")
                 }
 
-                val exportFile = File(exportsDirectory, "anonymized_audio.m4a")
+                val exportFile = File(exportsDirectory, ExportFileNames.audio())
                 withContext(Dispatchers.IO) {
                     AudioEncoder.encodeToM4a(processed, RecordingEngine.SAMPLE_RATE, exportFile)
                 }
