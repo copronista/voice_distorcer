@@ -113,7 +113,7 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
             exportsDirectory.mkdirs()
             val exportFile = File(
                 exportsDirectory,
-                "anonymized_video_${System.currentTimeMillis()}.mp4",
+                "anonymized_video.mp4",
             )
             try {
                 val config = settingsStore.load().toDistortionConfig()

@@ -131,7 +131,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     throw IllegalStateException("Processed clip is empty")
                 }
 
-                val exportFile = File(exportsDirectory, "anonymized_${System.currentTimeMillis()}.m4a")
+                val exportFile = File(exportsDirectory, "anonymized_audio.m4a")
                 withContext(Dispatchers.IO) {
                     AudioEncoder.encodeToM4a(processed, RecordingEngine.SAMPLE_RATE, exportFile)
                 }

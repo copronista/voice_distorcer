@@ -87,9 +87,9 @@ class ImportViewModel(application: Application) : AndroidViewModel(application) 
                     exportsDirectory,
                     when (kind) {
                         ImportedMediaKind.AUDIO ->
-                            "anonymized_audio_${System.currentTimeMillis()}.m4a"
+                            "anonymized_audio.m4a"
                         ImportedMediaKind.VIDEO ->
-                            "anonymized_video_${System.currentTimeMillis()}.mp4"
+                            "anonymized_video.mp4"
                     },
                 )
                 exportFile = target
