@@ -69,3 +69,11 @@ Every release must include both the full build and the minimal build. The minima
 - Minimal package: `com.voicedistorcer.audio`
 
 See [AGENTS.md](AGENTS.md) for the release policy and repository constraints.
+
+## License
+
+Voice Distorcer is free software licensed under GPL-3.0-or-later. See [LICENSE](LICENSE).
+
+## F-Droid
+
+The full variant's F-Droid build metadata is in [.fdroid.yml](.fdroid.yml), with store descriptions under `fastlane/metadata/android/en-US`. F-Droid publishes only the full variant; the minimal variant keeps a separate application ID on the `audio_only` branch.

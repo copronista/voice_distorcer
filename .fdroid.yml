@@ -1,0 +1,30 @@
+Categories:
+  - Multimedia
+  - Communication
+License: GPL-3.0-or-later
+AuthorName: Voice Distorcer contributors
+SourceCode: https://github.com/copronista/voice_distorcer
+IssueTracker: https://github.com/copronista/voice_distorcer/issues
+Changelog: https://github.com/copronista/voice_distorcer/releases
+RepoType: git
+Repo: https://github.com/copronista/voice_distorcer
+
+Builds:
+  - versionName: '1.5.1'
+    versionCode: 7
+    commit: 25105fc7142bfe4318528f4297e64484238f8855
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags .*[0-9]$
+CurrentVersion: '1.5.1'
+CurrentVersionCode: 7
+
+MaintainerNotes: |
+  Build with JDK 17 and Android SDK 35 using the included Gradle wrapper.
+  All dependencies come from Maven Central and Google Maven; no proprietary
+  SDKs or push services are used. The app declares no INTERNET permission.
+  The full build requests RECORD_AUDIO and CAMERA for local recording only.
+  The audio-only variant uses a different application ID and is maintained on
+  the audio_only branch; it is not part of this F-Droid entry.

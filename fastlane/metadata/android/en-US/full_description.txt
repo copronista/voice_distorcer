@@ -1,0 +1,14 @@
+Voice Distorcer records a voice message, anonymizes it on the device, and
+shares the result through the Android Sharesheet.
+
+The app applies pitch and formant shifting plus a set of fun effects so the
+speaker is no longer recognizable. All processing happens locally. The app
+has no network access and uploads nothing.
+
+The full build supports recording audio or video, importing media, previewing
+the processed clip, applying presets, fine-tuning DSP parameters, and backing
+up settings.
+
+The full build requests RECORD_AUDIO and CAMERA only for local recording.
+Files shared with other apps use a content URI and a random 12-character
+suffix in the filename.

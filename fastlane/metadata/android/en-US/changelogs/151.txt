@@ -1,0 +1,3 @@
+- Shared audio and video filenames now include a random 12-character
+  base36 suffix.
+- Added a README with build and release information.
