@@ -11,3 +11,6 @@ captures/
 *.aab
 .kotlin/
 token_github
+token_gitlab
+.gitlab
+*.swp
