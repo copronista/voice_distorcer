@@ -77,3 +77,7 @@ Voice Distorcer is free software licensed under GPL-3.0-or-later. See [LICENSE](
 ## F-Droid
 
 The full variant's F-Droid build metadata is in [.fdroid.yml](.fdroid.yml), with store descriptions under `fastlane/metadata/android/en-US`. F-Droid publishes only the full variant; the minimal variant keeps a separate application ID on the `audio_only` branch.
+
+## Donations
+
+Donations are welcome at BTC `bc1qqnsyrq7nzeer68hufat50fthfswnum802ew099`.

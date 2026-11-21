@@ -13,4 +13,6 @@ captures/
 token_github
 token_gitlab
 .gitlab
+-*.gitlab
+address_btc
 *.swp
