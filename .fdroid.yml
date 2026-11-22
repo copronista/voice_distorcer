@@ -11,6 +11,11 @@ RepoType: git
 Repo: https://github.com/copronista/voice_distorcer
 
 Builds:
+  - versionName: '1.6.0'
+    versionCode: 8
+    commit: 6e47bea8e2128125c65b7c374ab733d56b8bad02
+    gradle:
+      - yes
   - versionName: '1.5.1'
     versionCode: 7
     commit: 25105fc7142bfe4318528f4297e64484238f8855
@@ -19,8 +24,8 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags .*[0-9]$
-CurrentVersion: '1.5.1'
-CurrentVersionCode: 7
+CurrentVersion: '1.6.0'
+CurrentVersionCode: 8
 
 MaintainerNotes: |
   Build with JDK 17 and Android SDK 35 using the included Gradle wrapper.
