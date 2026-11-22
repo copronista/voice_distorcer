@@ -37,6 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +56,7 @@ import com.voicedistorcer.R
 import com.voicedistorcer.recording.VideoRecordingController
 import com.voicedistorcer.ui.theme.VoiceDistorcerTheme
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 class VideoActivity : ComponentActivity() {
     private val viewModel: VideoViewModel by viewModels()
@@ -103,11 +105,14 @@ private fun VideoMessageScreen(
     onClose: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val shareScope = rememberCoroutineScope()
     var hasPermissions by remember { mutableStateOf(context.hasVideoPermissions()) }
     var startAfterGrant by remember { mutableStateOf(false) }
     var showPreview by remember { mutableStateOf(false) }
+    var showFileNameDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(state) {
         if (state !is VideoUiState.Ready) {
@@ -218,7 +223,9 @@ private fun VideoMessageScreen(
 
                 Button(
                     onClick = {
-                        if (!viewModel.share(context)) {
+                        if (settings.askForFileName) {
+                            showFileNameDialog = true
+                        } else if (!viewModel.share(context)) {
                             Toast.makeText(
                                 context,
                                 R.string.error_video_share_failed,
@@ -274,6 +281,32 @@ private fun VideoMessageScreen(
         VideoPreviewDialog(
             file = readyState.file,
             onDismiss = { showPreview = false },
+        )
+    }
+
+    if (showFileNameDialog && readyState != null) {
+        FileNameDialog(
+            defaultName = settings.defaultVideoName,
+            useUniqueSuffix = settings.useUniqueSuffix,
+            onDismiss = { showFileNameDialog = false },
+            onConfirm = { name ->
+                showFileNameDialog = false
+                shareScope.launch {
+                    if (!viewModel.prepareExportName(name)) {
+                        Toast.makeText(
+                            context,
+                            R.string.error_rename_failed,
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    } else if (!viewModel.share(context)) {
+                        Toast.makeText(
+                            context,
+                            R.string.error_video_share_failed,
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                }
+            },
         )
     }
 }

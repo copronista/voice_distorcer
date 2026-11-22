@@ -579,4 +579,32 @@ class VoiceSettingsTest {
         assertEquals(1024, config.pitchFftSize)
         assertEquals(256, config.pitchHopSize)
     }
+
+    @Test
+    fun fileNameSettingsUseBuiltInDefaults() {
+        val settings = VoiceSettings()
+
+        assertEquals("anonymized_audio", settings.defaultAudioName)
+        assertEquals("anonymized_video", settings.defaultVideoName)
+        assertTrue(settings.useUniqueSuffix)
+        assertTrue(settings.askForFileName)
+    }
+
+    @Test
+    fun sanitizedPreservesFileNameSettings() {
+        val settings = VoiceSettings(
+            defaultAudioName = "custom_audio",
+            defaultVideoName = "custom_video",
+            useUniqueSuffix = false,
+            askForFileName = false,
+            toneSemitones = 99.0,
+        )
+
+        val sanitized = settings.sanitized()
+
+        assertEquals("custom_audio", sanitized.defaultAudioName)
+        assertEquals("custom_video", sanitized.defaultVideoName)
+        assertFalse(sanitized.useUniqueSuffix)
+        assertFalse(sanitized.askForFileName)
+    }
 }

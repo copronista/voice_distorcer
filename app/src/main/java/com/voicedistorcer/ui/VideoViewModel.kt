@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.voicedistorcer.R
 import com.voicedistorcer.processing.VideoAudioProcessor
+import com.voicedistorcer.settings.VoiceSettings
 import com.voicedistorcer.settings.VoiceSettingsStore
 import com.voicedistorcer.sharing.ExportFileNames
 import com.voicedistorcer.sharing.ShareGateway
@@ -31,6 +32,9 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<VideoUiState>(VideoUiState.Idle)
     val uiState: StateFlow<VideoUiState> = _uiState.asStateFlow()
+
+    private val _settings = MutableStateFlow(settingsStore.load())
+    val settings: StateFlow<VoiceSettings> = _settings.asStateFlow()
 
     private var workJob: Job? = null
     private var timerJob: Job? = null
@@ -96,6 +100,20 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    suspend fun prepareExportName(customName: String?): Boolean = withContext(Dispatchers.IO) {
+        val file = outputFile ?: return@withContext false
+        if (customName.isNullOrBlank()) return@withContext true
+        val renamed = ExportFileNames.rename(
+            file,
+            customName,
+            _settings.value.useUniqueSuffix,
+        ) ?: return@withContext false
+        outputFile = renamed
+        val state = _uiState.value as? VideoUiState.Ready ?: return@withContext true
+        _uiState.value = state.copy(file = renamed)
+        true
+    }
+
     fun share(context: Context): Boolean {
         val file = outputFile ?: return false
         return ShareGateway.share(
@@ -112,12 +130,15 @@ class VideoViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = VideoUiState.Processing
         workJob = viewModelScope.launch {
             exportsDirectory.mkdirs()
-            val exportFile = File(
+            val settings = settingsStore.load()
+            _settings.value = settings
+            val exportFile = ExportFileNames.resolveVideo(
                 exportsDirectory,
-                ExportFileNames.video(),
+                settings.defaultVideoName,
+                settings.useUniqueSuffix,
             )
             try {
-                val config = settingsStore.load().toDistortionConfig()
+                val config = settings.toDistortionConfig()
                 val result = withContext(Dispatchers.IO) {
                     VideoAudioProcessor.process(rawFile, exportFile, config)
                 }

@@ -36,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.voicedistorcer.R
 import com.voicedistorcer.ui.theme.VoiceDistorcerTheme
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -82,6 +84,8 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
     var hasPermission by remember { mutableStateOf(context.hasRecordAudioPermission()) }
     var startAfterGrant by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var showFileNameDialog by remember { mutableStateOf(false) }
+    val shareScope = rememberCoroutineScope()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -200,7 +204,9 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
 
                 Button(
                     onClick = {
-                        if (!viewModel.share(context)) {
+                        if (settings.askForFileName) {
+                            showFileNameDialog = true
+                        } else if (!viewModel.share(context)) {
                             Toast.makeText(
                                 context,
                                 R.string.error_share_failed,
@@ -273,6 +279,7 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
             onEchoChanged = viewModel::updateEcho,
             onFanChanged = viewModel::updateFan,
             onAdvancedSettingsChanged = viewModel::updateAdvancedSettings,
+            onFileNamingChanged = viewModel::updateAdvancedSettings,
             onExportSettings = {
                 exportSettingsLauncher.launch(exportSettingsFileName)
             },
@@ -280,6 +287,32 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
                 importSettingsLauncher.launch(arrayOf("*/*"))
             },
             onDismiss = { showSettings = false },
+        )
+    }
+
+    if (showFileNameDialog) {
+        FileNameDialog(
+            defaultName = settings.defaultAudioName,
+            useUniqueSuffix = settings.useUniqueSuffix,
+            onDismiss = { showFileNameDialog = false },
+            onConfirm = { name ->
+                showFileNameDialog = false
+                shareScope.launch {
+                    if (!viewModel.prepareExportName(name)) {
+                        Toast.makeText(
+                            context,
+                            R.string.error_rename_failed,
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    } else if (!viewModel.share(context)) {
+                        Toast.makeText(
+                            context,
+                            R.string.error_share_failed,
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                }
+            },
         )
     }
 }

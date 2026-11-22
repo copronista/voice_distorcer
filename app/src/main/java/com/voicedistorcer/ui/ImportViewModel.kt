@@ -13,6 +13,7 @@ import com.voicedistorcer.R
 import com.voicedistorcer.playback.AudioPreviewPlayer
 import com.voicedistorcer.processing.AudioFileProcessor
 import com.voicedistorcer.processing.VideoAudioProcessor
+import com.voicedistorcer.settings.VoiceSettings
 import com.voicedistorcer.settings.VoiceSettingsStore
 import com.voicedistorcer.sharing.ExportFileNames
 import com.voicedistorcer.sharing.ShareGateway
@@ -39,6 +40,9 @@ class ImportViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _uiState = MutableStateFlow<ImportUiState>(ImportUiState.Idle)
     val uiState: StateFlow<ImportUiState> = _uiState.asStateFlow()
+
+    private val _settings = MutableStateFlow(settingsStore.load())
+    val settings: StateFlow<VoiceSettings> = _settings.asStateFlow()
 
     private val _isPreviewPlaying = MutableStateFlow(false)
     val isPreviewPlaying: StateFlow<Boolean> = _isPreviewPlaying.asStateFlow()
@@ -83,16 +87,21 @@ class ImportViewModel(application: Application) : AndroidViewModel(application) 
                 val kind = withContext(Dispatchers.IO) {
                     detectKind(rawFile, resolvedMime)
                 }
-                val config = settingsStore.load().toDistortionConfig()
-                val target = File(
-                    exportsDirectory,
-                    when (kind) {
-                        ImportedMediaKind.AUDIO ->
-                            ExportFileNames.audio()
-                        ImportedMediaKind.VIDEO ->
-                            ExportFileNames.video()
-                    },
-                )
+                val settings = settingsStore.load()
+                _settings.value = settings
+                val config = settings.toDistortionConfig()
+                val target = when (kind) {
+                    ImportedMediaKind.AUDIO -> ExportFileNames.resolveAudio(
+                        exportsDirectory,
+                        settings.defaultAudioName,
+                        settings.useUniqueSuffix,
+                    )
+                    ImportedMediaKind.VIDEO -> ExportFileNames.resolveVideo(
+                        exportsDirectory,
+                        settings.defaultVideoName,
+                        settings.useUniqueSuffix,
+                    )
+                }
                 exportFile = target
 
                 val durationMs = withContext(Dispatchers.IO) {
@@ -128,6 +137,19 @@ class ImportViewModel(application: Application) : AndroidViewModel(application) 
         _uiState.value = ImportUiState.Error(
             appContext.getString(R.string.error_import_missing),
         )
+    }
+
+    suspend fun prepareExportName(customName: String?): Boolean = withContext(Dispatchers.IO) {
+        val state = _uiState.value as? ImportUiState.Ready ?: return@withContext false
+        stopPreview()
+        if (customName.isNullOrBlank()) return@withContext true
+        val renamed = ExportFileNames.rename(
+            state.file,
+            customName,
+            _settings.value.useUniqueSuffix,
+        ) ?: return@withContext false
+        _uiState.value = state.copy(file = renamed)
+        true
     }
 
     fun share(context: Context): Boolean {

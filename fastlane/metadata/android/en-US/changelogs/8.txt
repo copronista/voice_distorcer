@@ -1,0 +1,3 @@
+- Added configurable names for shared audio and video files.
+- Added optional unique suffixes and an optional prompt before sharing.
+- Updated F-Droid feature descriptions and release metadata.

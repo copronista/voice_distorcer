@@ -81,6 +81,10 @@ data class VoiceSettings(
     val formantOverlap: Int = DEFAULT_FORMANT_OVERLAP,
     val pitchFftSize: Int = DEFAULT_PITCH_FFT_SIZE,
     val pitchOverlap: Int = DEFAULT_PITCH_OVERLAP,
+    val defaultAudioName: String = DEFAULT_AUDIO_NAME,
+    val defaultVideoName: String = DEFAULT_VIDEO_NAME,
+    val useUniqueSuffix: Boolean = DEFAULT_USE_UNIQUE_SUFFIX,
+    val askForFileName: Boolean = DEFAULT_ASK_FOR_FILE_NAME,
 ) {
     fun toDistortionConfig(): DistortionConfig {
         val safeTone = toneSemitones.coerceIn(MIN_TONE, MAX_TONE)
@@ -765,6 +769,10 @@ data class VoiceSettings(
         const val DEFAULT_FORMANT_OVERLAP = 4
         const val DEFAULT_PITCH_FFT_SIZE = 2048
         const val DEFAULT_PITCH_OVERLAP = 4
+        const val DEFAULT_AUDIO_NAME = "anonymized_audio"
+        const val DEFAULT_VIDEO_NAME = "anonymized_video"
+        const val DEFAULT_USE_UNIQUE_SUFFIX = true
+        const val DEFAULT_ASK_FOR_FILE_NAME = true
 
         val FFT_SIZES = listOf(1024, 2048, 4096)
         val FORMANT_OVERLAPS = listOf(2, 4, 8)

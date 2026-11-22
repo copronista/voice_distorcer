@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -22,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -43,6 +45,7 @@ fun VoiceSettingsDialog(
     onEchoChanged: (Double) -> Unit,
     onFanChanged: (Double) -> Unit,
     onAdvancedSettingsChanged: (VoiceSettings) -> Unit,
+    onFileNamingChanged: (VoiceSettings) -> Unit,
     onExportSettings: () -> Unit,
     onImportSettings: () -> Unit,
     onDismiss: () -> Unit,
@@ -835,6 +838,61 @@ fun VoiceSettingsDialog(
                 )
 
                 Text(
+                    text = stringResource(R.string.settings_file_name_label),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = settings.askForFileName,
+                        onClick = {
+                            onFileNamingChanged(settings.copy(askForFileName = true))
+                        },
+                        label = {
+                            Text(stringResource(R.string.settings_file_name_ask))
+                        },
+                    )
+                    FilterChip(
+                        selected = !settings.askForFileName,
+                        onClick = {
+                            onFileNamingChanged(settings.copy(askForFileName = false))
+                        },
+                        label = {
+                            Text(stringResource(R.string.settings_file_name_default))
+                        },
+                    )
+                }
+                TextSettingField(
+                    label = stringResource(R.string.settings_default_audio_name),
+                    value = settings.defaultAudioName,
+                    onValueChange = {
+                        onFileNamingChanged(settings.copy(defaultAudioName = it))
+                    },
+                )
+                TextSettingField(
+                    label = stringResource(R.string.settings_default_video_name),
+                    value = settings.defaultVideoName,
+                    onValueChange = {
+                        onFileNamingChanged(settings.copy(defaultVideoName = it))
+                    },
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Switch(
+                        checked = settings.useUniqueSuffix,
+                        onCheckedChange = {
+                            onFileNamingChanged(settings.copy(useUniqueSuffix = it))
+                        },
+                    )
+                    Text(stringResource(R.string.settings_unique_suffix))
+                }
+                Text(
+                    text = stringResource(R.string.settings_file_name_note),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+
+                Text(
                     text = stringResource(R.string.settings_backup_label),
                     style = MaterialTheme.typography.titleSmall,
                 )
@@ -913,6 +971,24 @@ private fun IntSettingField(
 }
 
 @Composable
+private fun TextSettingField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.titleSmall,
+    )
+    OutlinedTextField(
+        value = value,
+        onValueChange = { if (it.length <= MAX_NAME_LENGTH) onValueChange(it) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
 private fun ChoiceRow(
     label: String,
     options: List<Int>,
@@ -970,3 +1046,4 @@ private const val HIGH_PASS_STEPS = 29
 private const val NOISE_GATE_STEPS = 11
 private const val OUTPUT_GAIN_STEPS = 23
 private const val GAIN_LIMIT_STEPS = 4
+private const val MAX_NAME_LENGTH = 80

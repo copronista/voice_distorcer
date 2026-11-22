@@ -132,7 +132,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     throw IllegalStateException("Processed clip is empty")
                 }
 
-                val exportFile = File(exportsDirectory, ExportFileNames.audio())
+                val exportFile = ExportFileNames.resolveAudio(
+            exportsDirectory,
+            _settings.value.defaultAudioName,
+            _settings.value.useUniqueSuffix,
+        )
                 withContext(Dispatchers.IO) {
                     AudioEncoder.encodeToM4a(processed, RecordingEngine.SAMPLE_RATE, exportFile)
                 }
@@ -155,6 +159,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         recorder.stop()
     }
 
+    suspend fun prepareExportName(customName: String?): Boolean = withContext(Dispatchers.IO) {
+        val file = outputFile ?: return@withContext false
+        stopPreview()
+        if (customName.isNullOrBlank()) return@withContext true
+        val renamed = ExportFileNames.rename(
+            file,
+            customName,
+            _settings.value.useUniqueSuffix,
+        ) ?: return@withContext false
+        outputFile = renamed
+        true
+    }
+
     fun share(context: Context): Boolean {
         val file = outputFile ?: return false
         stopPreview()
@@ -171,7 +188,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun applyPreset(preset: VoicePreset) {
-        updateSettings(VoiceSettings.forPreset(preset))
+        val current = _settings.value
+        val updated = VoiceSettings.forPreset(preset).copy(
+            defaultAudioName = current.defaultAudioName,
+            defaultVideoName = current.defaultVideoName,
+            useUniqueSuffix = current.useUniqueSuffix,
+            askForFileName = current.askForFileName,
+        )
+        updateSettings(updated)
     }
 
     fun updateTone(semitones: Double) {

@@ -1,14 +1,25 @@
 Voice Distorcer records a voice message, anonymizes it on the device, and
 shares the result through the Android Sharesheet.
 
-The app applies pitch and formant shifting plus a set of fun effects so the
-speaker is no longer recognizable. All processing happens locally. The app
-has no network access and uploads nothing.
+The app applies pitch and formant shifting, speed changes, and a set of
+effects so the speaker is no longer recognizable. All processing happens
+locally. The app has no network access, no analytics, and uploads nothing.
 
-The full build supports recording audio or video, importing media, previewing
-the processed clip, applying presets, fine-tuning DSP parameters, and backing
-up settings.
+The full build supports recording audio or video, importing media from the
+system picker, receiving media from other apps, previewing the processed
+clip, applying presets, fine-tuning DSP parameters, and backing up settings.
+
+Presets include Default, Male, Female, Chipmunk, Monster, Kid, Old Man,
+Stutter, Reverse, Alien, Drunk, Ghost, Telephone, Megaphone, and Bee. Users
+can also adjust tone, formants, speed, grit, robot, echo, fan, stutter,
+reverse, alien, drunk, telephone, megaphone, and bee effects.
+
+Advanced controls cover cleanup and shaping: high-pass filter, noise gate,
+compressor, output gain, formant mix, spectral smoothing, formant gain limit,
+and expert FFT size and overlap settings.
+
+Shared files can use a custom default name, an optional unique suffix, and an
+optional prompt before sharing. Files are exposed to messaging apps through a
+FileProvider content URI.
 
 The full build requests RECORD_AUDIO and CAMERA only for local recording.
-Files shared with other apps use a content URI and a random 12-character
-suffix in the filename.

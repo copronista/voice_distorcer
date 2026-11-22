@@ -32,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.voicedistorcer.R
 import com.voicedistorcer.ui.theme.VoiceDistorcerTheme
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 class ImportActivity : ComponentActivity() {
     private val viewModel: ImportViewModel by viewModels()
@@ -104,9 +106,12 @@ private fun ImportScreen(
     onClose: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val isPreviewPlaying by viewModel.isPreviewPlaying.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val shareScope = rememberCoroutineScope()
     var showVideoPreview by remember { mutableStateOf(false) }
+    var showFileNameDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(viewModel) {
         viewModel.previewErrors.collect {
@@ -188,7 +193,9 @@ private fun ImportScreen(
 
                 Button(
                     onClick = {
-                        if (!viewModel.share(context)) {
+                        if (settings.askForFileName) {
+                            showFileNameDialog = true
+                        } else if (!viewModel.share(context)) {
                             Toast.makeText(
                                 context,
                                 if (readyState.kind == ImportedMediaKind.VIDEO) {
@@ -227,6 +234,37 @@ private fun ImportScreen(
         VideoPreviewDialog(
             file = readyState.file,
             onDismiss = { showVideoPreview = false },
+        )
+    }
+
+    if (showFileNameDialog && readyState != null) {
+        val isVideo = readyState.kind == ImportedMediaKind.VIDEO
+        FileNameDialog(
+            defaultName = if (isVideo) settings.defaultVideoName else settings.defaultAudioName,
+            useUniqueSuffix = settings.useUniqueSuffix,
+            onDismiss = { showFileNameDialog = false },
+            onConfirm = { name ->
+                showFileNameDialog = false
+                shareScope.launch {
+                    if (!viewModel.prepareExportName(name)) {
+                        Toast.makeText(
+                            context,
+                            R.string.error_rename_failed,
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    } else if (!viewModel.share(context)) {
+                        Toast.makeText(
+                            context,
+                            if (isVideo) {
+                                R.string.error_video_share_failed
+                            } else {
+                                R.string.error_share_failed
+                            },
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                }
+            },
         )
     }
 }
