@@ -67,6 +67,9 @@ class VoiceSettingsCodecTest {
             formantOverlap = 2,
             pitchFftSize = 1024,
             pitchOverlap = 8,
+            defaultAudioName = "custom_audio",
+            useUniqueSuffix = false,
+            askForFileName = false,
         )
 
         val encoded = VoiceSettingsCodec.encode(settings)
@@ -134,5 +137,8 @@ class VoiceSettingsCodecTest {
         assertEquals(VoicePreset.MONSTER, decoded.preset)
         assertEquals(fallback.grit, decoded.grit, 0.0)
         assertEquals(fallback.speed, decoded.speed, 0.0)
+        assertEquals(fallback.defaultAudioName, decoded.defaultAudioName)
+        assertTrue(decoded.useUniqueSuffix)
+        assertTrue(decoded.askForFileName)
     }
 }

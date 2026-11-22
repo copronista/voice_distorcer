@@ -179,6 +179,18 @@ class VoiceSettingsStore(context: Context) {
             KEY_FORMANT_GAIN_LIMIT,
             fallback.formantGainLimit.toFloat(),
         ).toDouble()
+        val defaultAudioName = preferences.getString(
+            KEY_DEFAULT_AUDIO_NAME,
+            fallback.defaultAudioName,
+        ) ?: fallback.defaultAudioName
+        val useUniqueSuffix = preferences.getBoolean(
+            KEY_USE_UNIQUE_SUFFIX,
+            fallback.useUniqueSuffix,
+        )
+        val askForFileName = preferences.getBoolean(
+            KEY_ASK_FOR_FILE_NAME,
+            fallback.askForFileName,
+        )
 
         val safeTone = tone.coerceIn(VoiceSettings.MIN_TONE, VoiceSettings.MAX_TONE)
         return VoiceSettings(
@@ -356,6 +368,9 @@ class VoiceSettingsStore(context: Context) {
             pitchOverlap = VoiceSettings.normalizePitchOverlap(
                 preferences.getInt(KEY_PITCH_OVERLAP, fallback.pitchOverlap),
             ),
+            defaultAudioName = defaultAudioName,
+            useUniqueSuffix = useUniqueSuffix,
+            askForFileName = askForFileName,
         )
     }
 
@@ -419,6 +434,9 @@ class VoiceSettingsStore(context: Context) {
             .putInt(KEY_FORMANT_OVERLAP, settings.formantOverlap)
             .putInt(KEY_PITCH_FFT, settings.pitchFftSize)
             .putInt(KEY_PITCH_OVERLAP, settings.pitchOverlap)
+            .putString(KEY_DEFAULT_AUDIO_NAME, settings.defaultAudioName)
+            .putBoolean(KEY_USE_UNIQUE_SUFFIX, settings.useUniqueSuffix)
+            .putBoolean(KEY_ASK_FOR_FILE_NAME, settings.askForFileName)
             .apply()
     }
 
@@ -482,5 +500,8 @@ class VoiceSettingsStore(context: Context) {
         const val KEY_FORMANT_OVERLAP = "formant_overlap"
         const val KEY_PITCH_FFT = "pitch_fft"
         const val KEY_PITCH_OVERLAP = "pitch_overlap"
+        const val KEY_DEFAULT_AUDIO_NAME = "default_audio_name"
+        const val KEY_USE_UNIQUE_SUFFIX = "use_unique_suffix"
+        const val KEY_ASK_FOR_FILE_NAME = "ask_for_file_name"
     }
 }

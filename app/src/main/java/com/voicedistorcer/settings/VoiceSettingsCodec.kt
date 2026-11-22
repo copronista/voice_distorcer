@@ -71,6 +71,9 @@ object VoiceSettingsCodec {
             setProperty(KEY_FORMANT_OVERLAP, safe.formantOverlap.toString())
             setProperty(KEY_PITCH_FFT, safe.pitchFftSize.toString())
             setProperty(KEY_PITCH_OVERLAP, safe.pitchOverlap.toString())
+            setProperty(KEY_DEFAULT_AUDIO_NAME, safe.defaultAudioName)
+            setProperty(KEY_USE_UNIQUE_SUFFIX, safe.useUniqueSuffix.toString())
+            setProperty(KEY_ASK_FOR_FILE_NAME, safe.askForFileName.toString())
         }
         val writer = StringWriter()
         properties.store(writer, null)
@@ -176,6 +179,15 @@ object VoiceSettingsCodec {
             formantOverlap = properties.int(KEY_FORMANT_OVERLAP, fallback.formantOverlap),
             pitchFftSize = properties.int(KEY_PITCH_FFT, fallback.pitchFftSize),
             pitchOverlap = properties.int(KEY_PITCH_OVERLAP, fallback.pitchOverlap),
+            defaultAudioName = properties.string(KEY_DEFAULT_AUDIO_NAME, fallback.defaultAudioName),
+            useUniqueSuffix = properties.boolean(
+                KEY_USE_UNIQUE_SUFFIX,
+                fallback.useUniqueSuffix,
+            ),
+            askForFileName = properties.boolean(
+                KEY_ASK_FOR_FILE_NAME,
+                fallback.askForFileName,
+            ),
         ).sanitized()
     }
 
@@ -187,6 +199,9 @@ object VoiceSettingsCodec {
 
     private fun Properties.boolean(key: String, fallback: Boolean): Boolean =
         getProperty(key)?.toBooleanStrictOrNull() ?: fallback
+
+    private fun Properties.string(key: String, fallback: String): String =
+        getProperty(key) ?: fallback
 
     private const val KEY_FORMAT = "format"
     private const val KEY_VERSION = "version"
@@ -248,4 +263,7 @@ object VoiceSettingsCodec {
     private const val KEY_FORMANT_OVERLAP = "formantOverlap"
     private const val KEY_PITCH_FFT = "pitchFftSize"
     private const val KEY_PITCH_OVERLAP = "pitchOverlap"
+    private const val KEY_DEFAULT_AUDIO_NAME = "defaultAudioName"
+    private const val KEY_USE_UNIQUE_SUFFIX = "useUniqueSuffix"
+    private const val KEY_ASK_FOR_FILE_NAME = "askForFileName"
 }

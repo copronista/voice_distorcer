@@ -30,6 +30,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -41,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.voicedistorcer.R
 import com.voicedistorcer.ui.theme.VoiceDistorcerTheme
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 class ImportActivity : ComponentActivity() {
     private val viewModel: ImportViewModel by viewModels()
@@ -101,8 +106,11 @@ private fun ImportScreen(
     onClose: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val isPreviewPlaying by viewModel.isPreviewPlaying.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val shareScope = rememberCoroutineScope()
+    var showFileNameDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(viewModel) {
         viewModel.previewErrors.collect {
@@ -156,7 +164,9 @@ private fun ImportScreen(
 
                 Button(
                     onClick = {
-                        if (!viewModel.share(context)) {
+                        if (settings.askForFileName) {
+                            showFileNameDialog = true
+                        } else if (!viewModel.share(context)) {
                             Toast.makeText(
                                 context,
                                 R.string.error_share_failed,
@@ -176,6 +186,33 @@ private fun ImportScreen(
                 textAlign = TextAlign.Center,
             )
         }
+    }
+
+    val readyState = state as? ImportUiState.Ready
+    if (showFileNameDialog && readyState != null) {
+        FileNameDialog(
+            defaultName = settings.defaultAudioName,
+            useUniqueSuffix = settings.useUniqueSuffix,
+            onDismiss = { showFileNameDialog = false },
+            onConfirm = { name ->
+                showFileNameDialog = false
+                shareScope.launch {
+                    if (!viewModel.prepareExportName(name)) {
+                        Toast.makeText(
+                            context,
+                            R.string.error_rename_failed,
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    } else if (!viewModel.share(context)) {
+                        Toast.makeText(
+                            context,
+                            R.string.error_share_failed,
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                }
+            },
+        )
     }
 }
 

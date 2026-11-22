@@ -163,6 +163,7 @@ private fun VoiceDistorcerScreen(viewModel: MainViewModel) {
             onEchoChanged = viewModel::updateEcho,
             onFanChanged = viewModel::updateFan,
             onAdvancedSettingsChanged = viewModel::updateAdvancedSettings,
+            onFileNamingChanged = viewModel::updateAdvancedSettings,
             onExportSettings = {
                 exportSettingsLauncher.launch(exportSettingsFileName)
             },
